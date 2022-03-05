@@ -85,7 +85,7 @@ class Adaptor():
 		time.sleep(0.1)
 		if self.SerialAdapter is not None:
 			self.SerialAdapter.write(data + '\n'.encode())
-			#print ("({classname})# TX ({0}) {1}".format(self.DevicePath, ":".join("{:02x}".format(c) for c in data),classname=self.ClassName))
+			print ("({classname})# TX ({0}) {1}".format(self.DevicePath, ":".join("{:02x}".format(c) for c in data),classname=self.ClassName))
 			tick_timer = 0
 			while self.DataArrived == False and self.DeviceConnected == True and tick_timer < 30:
 				time.sleep(0.1)

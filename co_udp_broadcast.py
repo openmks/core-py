@@ -125,7 +125,7 @@ class UDPBroadcaster(co_definitions.ILayer):
 	def Send(self, data):
 		buffer = str.encode(data)
 		for idx in range(32):
-			ip_addr = "{}.{}".format(self.Network, str(idx))
+			ip_addr = "{}.{}".format(self.Network, str(idx+1))
 			clent_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 			# print("Send BEACON")
 			clent_socket.sendto(buffer, (ip_addr, self.Port))

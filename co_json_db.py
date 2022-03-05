@@ -34,9 +34,16 @@ class DB():
 		
 		return False
 	
+	def CreateDatabase(self, name):
+		co_file.File().SaveJSON(name, {})
+		return self.Load(name)
+	
 	def GetTable(self, tbl_name):
-		if tbl_name in self.DataBase:
-			return self.DataBase[tbl_name]
+		try:
+			if tbl_name in self.DataBase:
+				return self.DataBase[tbl_name]
+		except:
+			pass
 		return None
 
 	def AppendTable(self, name):
@@ -59,11 +66,11 @@ class DB():
 			return True
 		return False
 	
-	def UpdateRow(self, tbl_name, index, row):
+	def UpdateRow(self, tbl_name, index, param, value):
 		if tbl_name in self.DataBase:
 			for item in self.DataBase[tbl_name]:
 				if item["index"] == index:
-					item["index"] = row
+					item[param] = value
 					return True
 		return False
 	
