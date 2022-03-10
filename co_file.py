@@ -6,6 +6,10 @@ import json
 class File ():
 	def __init__(self):
 		self.Name = "Save/Load from file"
+	
+	def Create(self, filepath):
+		file = open(filepath, "w")
+		file.close()
 
 	def Save (self, filename, data):
 		file = open(filename, "w")
@@ -38,6 +42,14 @@ class File ():
 			return data
 		return ""
 	
+	def LoadJson(self, filename):
+		if os.path.isfile(filename) is True:
+			file = open(filename, "r")
+			data = file.read()
+			file.close()
+			return json.loads(data)
+		return None
+	
 	def LoadBytes(self, filename):
 		if os.path.isfile(filename) is True:
 			file = open(filename, "rb")
@@ -45,6 +57,39 @@ class File ():
 			file.close()
 			return data
 		return None
+	
+	def CreateFloder(self, folder_path):
+		try:
+			if os.path.exists(folder_path):
+				return True
+			else:
+				os.mkdir(folder_path)
+		except:
+			return False
+
+		return True
+	
+	def DeleteFile(self, file_path):
+		try:
+			if os.path.exists(file_path):
+				os.remove(file_path)
+			else:
+				return False
+		except:
+			return False
+
+		return True
+	
+	def DeleteFolder(self, dir_pah):
+		try:
+			if os.path.exists(dir_pah):
+				os.rmdir(dir_pah)
+			else:
+				return False
+		except:
+			return False
+
+		return True
 	
 	def SaveJSON(self, filename, data):
 		db_file = open(filename, "w")
