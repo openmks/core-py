@@ -40,7 +40,7 @@ class Beaconer():
 		del_users = []
 		for key in self.Users:
 			user = self.Users[key]
-			if time.time() - int(user["timestamp"]["last_updated"]) > 20:
+			if time.time() - int(user["timestamp"]["last_updated"]) > 30:
 				#ip 		 = user["sender"]["ip"]
 				#port 	 = user["data"]["server"]["socket"]["port"]
 				#hash_key = co_security.Hashes().GetHashMd5("{0}_{1}".format(ip,str(port)))
@@ -70,7 +70,7 @@ class Beaconer():
 
 		while self.Running is True:
 			self.SecTicker += 1
-			if (self.SecTicker % 10) == 0:
+			if (self.SecTicker % 25) == 0:
 				self.Beacon()
 				self.CheckDisconnectedUsers()
 			time.sleep(1)

@@ -22,7 +22,7 @@ class Logger():
         self.LoggerType         = "MKS"
         self.Path               = ""
         self.queue              = co_queue.Manager(self.Callback)
-        self.LogType            = 5
+        self.LogType            = 1
         self.LogTypeMap         = {
             "1": "DEBUG",
             "2": "CRITICAL",
@@ -65,6 +65,10 @@ class Logger():
         self.LogType = level
 
     def EnableLogger(self):
+        # Create folder
+        if co_file.File().CreateFloder("logs") is False:
+            return
+        
         self.Path = os.path.join('logs','{0}.log'.format(self.Name))
         if self.LoggerType == "MKS":
             self.Logger = co_file.File()
@@ -91,3 +95,8 @@ class Logger():
         except Exception as e:
             print("({classname})# [Log] ERROR".format(classname=self.ClassName))
         self.Locker.release()
+
+def InitLogger(log_name):
+    global LOGGER
+    LOGGER = Logger(log_name)
+    LOGGER.EnableLogger()

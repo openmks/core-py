@@ -2,7 +2,9 @@
 import os
 import _thread
 from flask import Flask, render_template, jsonify, Response, request
+from flask import send_file
 # from flask_cors import CORS
+from core import co_logger
 
 class EndpointAction(object):
 	def __init__(self, page, args):
@@ -10,17 +12,14 @@ class EndpointAction(object):
 		self.DataToJS = args
 
 	def __call__(self, *args):
-		print("Broswer Type", request.user_agent.browser)
-		print("Broswer Platform", request.user_agent.platform)
-
 		page_path = self.Page
+		co_logger.LOGGER.Log("\n\tBroswer Type: {}\n\tBroswer Platform: {}\n\tPage Path: {}".format(request.user_agent.browser, request.user_agent.platform, page_path), 1)
+
 		if "index.html" in self.Page:
 			if request.user_agent.platform in ["android"]:
 				page_path = os.path.join("index_mobile.html")
 			else:
 				page_path = os.path.join("index_default.html")
-			
-		print(page_path)
 
 		return render_template(page_path, data=self.DataToJS), 200, {
 			'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -45,11 +44,12 @@ class WebInterface():
 		# self.App.logger.disabled = True
 
 	def WebInterfaceWorker_Thread(self):
-		print ("({classname})# Starting local webface on port ({port}) ...".format(classname=self.ClassName, port=str(self.Port)))
+		co_logger.LOGGER.Log("({classname})# Starting local webface on port ({port}) ...".format(classname=self.ClassName, port=str(self.Port)), 1)
+
 		try:
 			self.App.run(host='0.0.0.0', port=self.Port)
 		except Exception as e:
-			print("WebInterfaceWorker_Thread Exception: {0}".format(str(e)))
+			co_logger.LOGGER.Log("WebInterfaceWorker_Thread Exception: {0}".format(str(e)), 1)
 			self.FlaskError = True
 			if self.ErrorEventHandler is not None:
 				self.ErrorEventHandler()
@@ -62,3 +62,12 @@ class WebInterface():
 			self.App.add_url_rule(endpoint, endpoint_name, EndpointAction(endpoint_name, args))
 		else:
 			self.App.add_url_rule(endpoint, endpoint_name, handler, methods=method)
+	
+	def SendFile(self, path):
+		ret = ""
+		try:
+			ret = send_file(path)
+		except Exception as e:
+			co_logger.LOGGER.Log("Exception (SendFile)", str(e), 1)
+
+		return ret

@@ -7,6 +7,7 @@ import serial.tools.list_ports
 import struct
 import _thread
 import threading
+from core import co_logger
 
 class Adaptor():
 	def __init__(self, path, baudrate):
@@ -50,11 +51,11 @@ class Adaptor():
 			# So we need to add a delay long enough to get past the bootloader make delay 3 sec.
 			time.sleep(3)
 		except Exception as e:
-			print ("({classname})# [ERROR] (Connect) {0}".format(str(e),classname=self.ClassName))
+			co_logger.LOGGER.Log("({classname})# [ERROR] (Connect) {0}".format(str(e),classname=self.ClassName), 1)
 			return False
 			
 		if self.SerialAdapter != None:
-			print ("({classname})# Open connection {0} {1}".format(self.DevicePath, self.DeviceBaudrate, classname=self.ClassName))
+			co_logger.LOGGER.Log("({classname})# Open connection {0} {1}".format(self.DevicePath, self.DeviceBaudrate, classname=self.ClassName), 1)
 			self.RecievePacketsWorkerRunning 	= True
 			self.DeviceConnected 				= True
 			self.ExitRecievePacketsWorker		= False
@@ -70,7 +71,7 @@ class Adaptor():
 			time.sleep(0.1)
 		if self.SerialAdapter != None:
 			self.SerialAdapter.close()
-		print("({classname})# Close connection {0}".format(self.DevicePath,classname=self.ClassName))
+		co_logger.LOGGER.Log("({classname})# Close connection {0}".format(self.DevicePath,classname=self.ClassName), 1)
 		if self.OnSerialConnectionClosedCallback is not None:
 			self.OnSerialConnectionClosedCallback(self.DevicePath)
 
@@ -85,7 +86,7 @@ class Adaptor():
 		time.sleep(0.1)
 		if self.SerialAdapter is not None:
 			self.SerialAdapter.write(data + '\n'.encode())
-			print ("({classname})# TX ({0}) {1}".format(self.DevicePath, ":".join("{:02x}".format(c) for c in data),classname=self.ClassName))
+			co_logger.LOGGER.Log("({classname})# TX ({0}) {1}".format(self.DevicePath, ":".join("{:02x}".format(c) for c in data),classname=self.ClassName), 1)
 			tick_timer = 0
 			while self.DataArrived == False and self.DeviceConnected == True and tick_timer < 30:
 				time.sleep(0.1)
@@ -136,7 +137,7 @@ class Adaptor():
 					elif packet_data_start is True and packet_data_end is False: # In middle of packet transfare
 						packet_data.append(shift_buffer[1])
 					elif packet_data_start is False and packet_data_end is True:  # Error
-						print ("({classname})# [ERROR] (RecievePacketsWorker) Packet corrupted.".format(classname=self.ClassName))
+						co_logger.LOGGER.Log("({classname})# [ERROR] (RecievePacketsWorker) Packet corrupted.".format(classname=self.ClassName), 1)
 						packet_data_end 	= False
 						packet_data 		= []
 						self.RXData 		= []
@@ -144,8 +145,8 @@ class Adaptor():
 					elif packet_data_start is False and packet_data_end is False:  # Error
 						pass
 			except Exception as e:
-				print(s_byte, len(s_byte))
-				print ("({classname})# [ERROR] (RecievePacketsWorker) ({2}) {0} {1}".format(str(e), self.RXData, self.DevicePath, classname=self.ClassName))
+				# print(s_byte, len(s_byte))
+				co_logger.LOGGER.Log("({classname})# [ERROR] (RecievePacketsWorker) ({2}) {0} {1}".format(str(e), self.RXData, self.DevicePath, classname=self.ClassName), 1)
 				if "device disconnected?" in str(e) or "ClearCommError" in str(e) or "Access is denied." in str(e):
 					# Device disconnected
 					self.DeviceConnected 				= True
@@ -155,4 +156,4 @@ class Adaptor():
 				self.DataArrived 	= True
 				
 		self.ExitRecievePacketsWorker = True
-		print("({classname})# Exit USB Adaptor".format(classname=self.ClassName))
+		co_logger.LOGGER.Log("({classname})# Exit USB Adaptor".format(classname=self.ClassName), 1)

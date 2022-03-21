@@ -9,6 +9,7 @@ from core import co_webserver
 from core import co_definitions
 from core import co_file
 from core.mks import mks_config
+from core import co_logger
 
 class WebsocketLayer():
 	def __init__(self):
@@ -23,7 +24,8 @@ class WebsocketLayer():
 		self.Port					= 0
 	
 	def RegisterCallbacks(self, connected, data, disconnect, empty):
-		print ("({classname})# (RegisterCallbacks)".format(classname=self.ClassName))
+		co_logger.LOGGER.Log("({classname})# (RegisterCallbacks)".format(classname=self.ClassName), 1)
+
 		self.OnWSConnected		= connected
 		self.OnDataArrivedEvent = data
 		self.OnWSDisconnected	= disconnect
@@ -33,13 +35,15 @@ class WebsocketLayer():
 		self.Port = port
 	
 	def AppendSocket(self, ws_id, ws):
-		print ("({classname})# Append ({0})".format(ws_id, classname=self.ClassName))
+		co_logger.LOGGER.Log("({classname})# Append ({0})".format(ws_id, classname=self.ClassName), 1)
+
 		self.ApplicationSockets[ws_id] = ws
 		if self.OnWSConnected is not None:
 			self.OnWSConnected(ws_id)
 	
 	def RemoveSocket(self, ws_id):
-		print ("({classname})# Remove ({0})".format(ws_id, classname=self.ClassName))
+		co_logger.LOGGER.Log("({classname})# Remove ({0})".format(ws_id, classname=self.ClassName), 1)
+
 		del self.ApplicationSockets[ws_id]
 		if self.OnWSDisconnected is not None:
 			self.OnWSDisconnected(ws_id)
@@ -58,9 +62,9 @@ class WebsocketLayer():
 			try:
 				self.ApplicationSockets[ws_id].send(json.dumps(data))
 			except Exception as e:
-				print ("({classname})# [ERROR] Send {0}".format(str(e), classname=self.ClassName))
+				co_logger.LOGGER.Log("({classname})# [ERROR] Send {0}".format(str(e), classname=self.ClassName), 1)
 		else:
-			print ("({classname})# [ERROR] This socket ({0}) does not exist. (Might be closed)".format(ws_id, classname=self.ClassName))
+			co_logger.LOGGER.Log("({classname})# [ERROR] This socket ({0}) does not exist. (Might be closed)".format(ws_id, classname=self.ClassName), 1)
 	
 	def EmitEvent(self, data):
 		for key in self.ApplicationSockets:
@@ -74,10 +78,10 @@ class WebsocketLayer():
 			server = WebSocketServer(('0.0.0.0', self.Port), Resource(OrderedDict([('/', WSApplication)])))
 
 			self.ServerRunning = True
-			print ("({classname})# Staring local WS server ... {0}".format(self.Port, classname=self.ClassName))
+			co_logger.LOGGER.Log("({classname})# Staring local WS server ... {0}".format(self.Port, classname=self.ClassName), 1)
 			server.serve_forever()
 		except Exception as e:
-			print ("({classname})# [ERROR] Stoping local WS server ... {0}".format(str(e), classname=self.ClassName))
+			co_logger.LOGGER.Log("({classname})# [ERROR] Stoping local WS server ... {0}".format(str(e), classname=self.ClassName), 1)
 			self.ServerRunning = False
 	
 	def RunServer(self):
@@ -92,7 +96,7 @@ class WSApplication(WebSocketApplication):
 		super(WSApplication, self).__init__(*args, **kwargs)
 	
 	def on_open(self):
-		print ("({classname})# CONNECTION OPENED".format(classname=self.ClassName))
+		co_logger.LOGGER.Log("({classname})# CONNECTION OPENED".format(classname=self.ClassName), 1)
 		WSManager.AppendSocket(id(self.ws), self.ws)
 
 	def on_message(self, message):
@@ -100,10 +104,10 @@ class WSApplication(WebSocketApplication):
 		if message is not None:
 			WSManager.WSDataArrived(self.ws, message)
 		else:
-			print ("({classname})# [ERROR] Message is not valid".format(classname=self.ClassName))
+			co_logger.LOGGER.Log("({classname})# [ERROR] Message is not valid".format(classname=self.ClassName), 1)
 
 	def on_close(self, reason):
-		print ("({classname})# CONNECTION CLOSED".format(classname=self.ClassName))
+		co_logger.LOGGER.Log("({classname})# CONNECTION CLOSED".format(classname=self.ClassName), 1)
 		WSManager.RemoveSocket(id(self.ws))
 
 class ApplicationLayer(co_definitions.ILayer):
@@ -135,17 +139,18 @@ class ApplicationLayer(co_definitions.ILayer):
 	def Run(self):
 		status = self.Config.Load()
 		if status is False:
-			print("ERROR - Wrong configuration format")
+			co_logger.LOGGER.Log("ERROR - Wrong configuration format", 1)
 			return False
 		
-		print("Local IP {0}".format(self.Config.LocalIPAddress))
+		co_logger.LOGGER.Log("Local IP {0}".format(self.Config.LocalIPAddress), 1)
 		ip_addr = str(self.Config.Application["server"]["address"]["ip"])
 		if self.Config.Application["server"]["address"]["use_local_ip"] is True:
 			ip_addr = str(self.Config.LocalIPAddress)
 		# Data for the pages.
 		web_data = {
 			'ip': ip_addr,
-			'port': str(self.Config.Application["server"]["web_socket"]["port"])
+			'port': str(self.Config.Application["server"]["web_socket"]["port"]),
+			'web_port': str(self.Config.Application["server"]["web"]["port"])
 		}
 		data = json.dumps(web_data)
 		self.Web = co_webserver.WebInterface("Context", self.Config.Application["server"]["web"]["port"])
@@ -165,8 +170,14 @@ class ApplicationLayer(co_definitions.ILayer):
 	def WebErrorEvent(self):
 		pass
 
+	def AddQueryHandler(self, endpoint=None, endpoint_name=None, handler=None, args=None, method=['GET']):
+		self.Web.AddEndpoint(endpoint, endpoint_name, handler, args, method)
+	
+	def SendFile(self, path):
+		self.Web.SendFile(path)
+
 	def GetResourceRequestHandler(self, sock, packet):
-		print("GetResourceRequestHandler {0}".format(packet))
+		co_logger.LOGGER.Log("GetResourceRequestHandler {0}".format(packet), 1)
 		objFile = co_file.File()
 
 		path	= os.path.join(".", "static", "js", "application", "resource", packet["payload"]["file_path"])
@@ -178,7 +189,7 @@ class ApplicationLayer(co_definitions.ILayer):
 		}
 	
 	def GetFileRequestHandler(self, sock, packet):
-		print("GetFileRequestHandler {0}".format(packet))
+		co_logger.LOGGER.Log("GetFileRequestHandler {0}".format(packet), 1)
 		objFile = co_file.File()
 
 		path	= os.path.join(".", "static", packet["payload"]["file_path"])
@@ -203,7 +214,7 @@ class ApplicationLayer(co_definitions.ILayer):
 					packet["payload"] = message
 					WSManager.Send(id(ws), packet)
 		except Exception as e:
-			print("WSDataArrivedHandler Exception: {0}".format(str(e)))
+			co_logger.LOGGER.Log("WSDataArrivedHandler Exception: {0}".format(str(e)), 1)
 
 	def WSDisconnectedHandler(self, ws_id):
 		pass

@@ -7,6 +7,7 @@ import _thread
 from core.mks import mks_config
 from core import co_definitions
 from core import co_security
+from core import co_logger
 
 class UDPBroadcaster(co_definitions.ILayer):
 	def __init__(self):
@@ -30,19 +31,19 @@ class UDPBroadcaster(co_definitions.ILayer):
 		self.ServerRunning = False
 	
 	def AcqureMasterOwnership(self):
-		print("Trying to acqure master ownership")
+		co_logger.LOGGER.Log("Trying to acqure master ownership", 1)
 		self.AmISlave = False
 		self.MasterTimeoutCount = 0
 		self.Port = self.Config.Application["server"]["broadcast"]["port"]
 		self.ServerSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		try:
 			self.ServerSocket.bind(('', self.Port))
-			print("I am master")
+			co_logger.LOGGER.Log("I am master", 1)
 		except:
 			# Port is taken must be one of the nodes allready running
 			self.AmISlave = True
 			self.ServerSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			print("I am slave")
+			co_logger.LOGGER.Log("I am slave", 1)
 	
 	def CheckDisconnectedNodes(self):
 		del_nodes = []
@@ -62,7 +63,7 @@ class UDPBroadcaster(co_definitions.ILayer):
 		self.Network = "{}.{}.{}".format(splited_data[0], splited_data[1], splited_data[2])
 		self.AcqureMasterOwnership()
 
-		print("(UDPBroadcaster)# Start service ({0})".format(self.Port))
+		co_logger.LOGGER.Log("(UDPBroadcaster)# Start service ({0})".format(self.Port), 1)
 		while self.ServerRunning is True:
 			try:
 				if self.AmISlave is False:
@@ -120,7 +121,7 @@ class UDPBroadcaster(co_definitions.ILayer):
 								}
 							})
 			except Exception as e:
-				print("(ServerThread)# {0}".format(str(e)))
+				co_logger.LOGGER.Log("(ServerThread)# {0}".format(str(e)), 1)
 	
 	def Send(self, data):
 		buffer = str.encode(data)
