@@ -66,7 +66,53 @@ class DB():
 			return True
 		return False
 	
-	def UpdateRow(self, tbl_name, index, param, value):
+	def GetItemIndex(self, tbl_name, where):
+		if tbl_name in self.DataBase:
+			for item in self.DataBase[tbl_name]:
+				counter = 0
+				for key in where:
+					if key in item:
+						if where[key] == item[key]:
+							counter += 1
+				if counter == len(where):
+					return int(item["index"])
+		return 0
+	
+	def UpdateRow(self, tbl_name, where, param, value):
+		if tbl_name in self.DataBase:
+			for item in self.DataBase[tbl_name]:
+				counter = 0
+				for key in where:
+					if key in item:
+						if where[key] == item[key]:
+							counter += 1
+				if counter == len(where):
+					item[param] = value
+					return True
+		return False
+	
+	def DeleteRow(self, tbl_name, where):
+		if tbl_name in self.DataBase:
+			del_index = -1
+			for idx, item in enumerate(self.DataBase[tbl_name]):
+				counter = 0
+				for key in where:
+					if key in item:
+						if where[key] == item[key]:
+							counter += 1
+				# print(counter, len(where))
+				if counter == len(where):
+					del_index = idx
+					break
+			
+			if del_index == -1:
+				return False
+			else:
+				del self.DataBase[tbl_name][del_index]
+				return True
+		return False
+	
+	def UpdateRowByIndex(self, tbl_name, index, param, value):
 		if tbl_name in self.DataBase:
 			for item in self.DataBase[tbl_name]:
 				if item["index"] == index:
@@ -74,15 +120,13 @@ class DB():
 					return True
 		return False
 	
-	def DeleteRow(self, tbl_name, index):
+	def DeleteRowByIndex(self, tbl_name, index):
 		if tbl_name in self.DataBase:
 			del_index = -1
 			for idx, item in enumerate(self.DataBase[tbl_name]):
 				if item["index"] == index:
 					del_index = idx
 					break
-			
-			print("DeleteRow", del_index)
 			
 			if del_index == -1:
 				return False

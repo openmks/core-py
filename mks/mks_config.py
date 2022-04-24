@@ -7,7 +7,7 @@ from core import co_common
 
 class NodeConfig():
 	def __init__(self):
-		self.MKSEnvPath 	= os.path.join(os.environ['HOME'],"mks")
+		self.MKSEnvPath 	= None # os.path.join(os.environ['HOME'],"mks")
 		self.Application 	= None
 		self.Terminal 		= None
 		self.Logger 		= None
@@ -34,7 +34,8 @@ class NodeConfig():
 			self.Network	 = config["network"]
 
 			self.LocalIPAddress = self.GetIPAddress()
-			self.Application["server"]["address"]["ip"] = self.LocalIPAddress
+			if self.LocalIPAddress is not None:
+				self.Application["server"]["address"]["ip"] = self.LocalIPAddress
 			self.Hash = co_security.Hashes().GetHashMd5(json.dumps(self.Application))
 		except Exception as e:
 			return False

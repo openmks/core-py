@@ -152,6 +152,7 @@ class ApplicationLayer(co_definitions.ILayer):
 			'port': str(self.Config.Application["server"]["web_socket"]["port"]),
 			'web_port': str(self.Config.Application["server"]["web"]["port"])
 		}
+	
 		data = json.dumps(web_data)
 		self.Web = co_webserver.WebInterface("Context", self.Config.Application["server"]["web"]["port"])
 		self.Web.ErrorEventHandler = self.WebErrorEvent
