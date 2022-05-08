@@ -58,6 +58,11 @@ class File ():
 			return data
 		return None
 	
+	def WriteBytes(self, filename, data):
+		file = open(filename, "wb")
+		file.write(data)
+		file.close()
+	
 	def CreateFloder(self, folder_path):
 		try:
 			if os.path.exists(folder_path):
