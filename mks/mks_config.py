@@ -16,10 +16,14 @@ class NodeConfig():
 		self.NetworkCards	= co_common.GetIPList()
 		self.LocalIPAddress = ""
 	
+	def ListIface(self):
+		return self.NetworkCards
+	
 	def GetIPAddress(self):
 		for network in self.NetworkCards:
 			if network["iface"] in self.Network["iface"]:
 				return network["ip"]
+		return None
 
 	def Load(self):
 		strJson = co_file.File().Load("config.json")

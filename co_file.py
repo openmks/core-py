@@ -96,13 +96,28 @@ class File ():
 
 		return True
 	
+	def GetFileSize(self, path):
+		in_bytes = os.path.getsize(path)
+
+		return in_bytes
+	
 	def SaveJSON(self, filename, data):
 		db_file = open(filename, "w")
 		json.dump(data, db_file, indent=2)
 		db_file.close()
 	
+	def AppendJSON(self, filename, data):
+		db_file = open(filename, "a")
+		json.dump(data, db_file, indent=2)
+		db_file.close()
+	
 	def ListFilesInFolder(self, path):
-		onlyfiles = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+		onlyfiles = []
+		try:
+			onlyfiles = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+		except Exception as e:
+			print("[File] (ListFilesInFolder) Exception {}".format(str(e)))
+		
 		return onlyfiles
 	
 	def ListFoldersInPath(self, path):

@@ -18,8 +18,14 @@ class TerminalLayer(co_definitions.ILayer):
 			"web":			self.WebHandler,
 			"exit":			self.ExitHandler,
 			"whoami":		self.WhoAmIHandler,
+			"iface":		self.IFaceHandler,
 		}
 	
+	def IFaceHandler(self, data):
+		network_cards = mks_config.NodeConfig().ListIface()
+		for idx, network in enumerate(network_cards):
+			print("{}. iface: {}\n  IP: {}\n  Mask: {}\n  MAC: {}".format(idx+1, network["iface"], network["ip"], network["mask"], network["mac"]))
+
 	def UpdateApplication(self, data):
 		if self.Application is not None:
 			self.Application.EmitEvent(data)
@@ -28,7 +34,8 @@ class TerminalLayer(co_definitions.ILayer):
 		print(self.Config.Application["name"])
 	
 	def HelpHandler(self, data):
-		pass
+		for idx, key in enumerate(self.Handlers):
+			print("\t{}. {}".format(idx+1, key))
 
 	def ExitHandler(self, data):
 		self.Exit()

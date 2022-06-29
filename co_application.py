@@ -123,6 +123,15 @@ class ApplicationLayer(co_definitions.ILayer):
 		# self.HW 		= None
 		self.Config 	= mks_config.NodeConfig()
 		self.Web		= None
+
+		self.WebSocketConnectedEventCallbacks 		= []
+		self.WebSocketDisconnectedEventCallbacks 	= []
+	
+	def RegisterConnectedEvent(self, callback):
+		self.WebSocketConnectedEventCallbacks.append(callback)
+	
+	def RegisterDisconnectedEvent(self, callback):
+		self.WebSocketDisconnectedEventCallbacks.append(callback)
 	
 	def SetIp(self, ip):
 		self.Ip = ip
@@ -146,6 +155,7 @@ class ApplicationLayer(co_definitions.ILayer):
 		ip_addr = str(self.Config.Application["server"]["address"]["ip"])
 		if self.Config.Application["server"]["address"]["use_local_ip"] is True:
 			ip_addr = str(self.Config.LocalIPAddress)
+		co_logger.LOGGER.Log("Used IP {0}".format(ip_addr), 1)
 		# Data for the pages.
 		web_data = {
 			'ip': ip_addr,
@@ -202,7 +212,9 @@ class ApplicationLayer(co_definitions.ILayer):
 		}
 	
 	def WSConnectedHandler(self, ws_id):
-		pass
+		if len(self.WebSocketConnectedEventCallbacks) > 0:
+			for callback in self.WebSocketConnectedEventCallbacks:
+				callback(ws_id)
 
 	def WSDataArrivedHandler(self, ws, packet):
 		try:
@@ -215,10 +227,12 @@ class ApplicationLayer(co_definitions.ILayer):
 					packet["payload"] = message
 					WSManager.Send(id(ws), packet)
 		except Exception as e:
-			co_logger.LOGGER.Log("WSDataArrivedHandler Exception: {0}".format(str(e)), 1)
+			co_logger.LOGGER.Log("WSDataArrivedHandler ({}) Exception: {}".format(command, str(e)), 1)
 
 	def WSDisconnectedHandler(self, ws_id):
-		pass
+		if len(self.WebSocketDisconnectedEventCallbacks) > 0:
+			for callback in self.WebSocketDisconnectedEventCallbacks:
+				callback(ws_id)
 
 	def WSSessionsEmpty(self):
 		pass
