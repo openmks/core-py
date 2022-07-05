@@ -4,9 +4,10 @@ import _thread
 
 from core import co_queue
 from core import co_security
+from core import co_logger
 
 class Beaconer():
-	def __init__(self, ILayer):
+	def __init__(self, ILayer, handlers):
 		self.Users 				= {}
 		self.MulticastIn		= co_queue.Manager(self.MulticastData)
 		self.Multicast 			= ILayer
@@ -16,6 +17,13 @@ class Beaconer():
 		self.SecTicker			= 0
 
 		self.Multicast.RegisterEventQueue(self.MulticastIn)
+		self.Handlers 			= handlers
+		self.Handlers["get_neighbors"]	= self.GetNeighborsHandler
+		
+	def GetNeighborsHandler(self, sock, packet):
+		return {
+			"users": self.Users
+		}
 	
 	def MulticastData(self, info):
 		hash_key = info["data"]["hash"]
@@ -65,12 +73,15 @@ class Beaconer():
 		self.Multicast.Stop()
 
 	def Worker(self):
+		co_logger.LOGGER.Log("(Beaconer)# Start worker", 1)
 		self.MulticastIn.Start()
 		self.Multicast.Run()
 
+		time.sleep(0.5)
+		self.Beacon()
 		while self.Running is True:
 			self.SecTicker += 1
-			if (self.SecTicker % 25) == 0:
+			if (self.SecTicker % 20) == 0:
 				self.Beacon()
 				self.CheckDisconnectedUsers()
 			time.sleep(1)

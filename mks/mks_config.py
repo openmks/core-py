@@ -20,6 +20,7 @@ class NodeConfig():
 		return self.NetworkCards
 	
 	def GetIPAddress(self):
+		# Find iface with same UUID as in config file
 		for network in self.NetworkCards:
 			if network["iface"] in self.Network["iface"]:
 				return network["ip"]
@@ -40,6 +41,8 @@ class NodeConfig():
 			self.LocalIPAddress = self.GetIPAddress()
 			if self.LocalIPAddress is not None:
 				self.Application["server"]["address"]["ip"] = self.LocalIPAddress
+			else:
+				self.LocalIPAddress = "localhost"
 			self.Hash = co_security.Hashes().GetHashMd5(json.dumps(self.Application))
 		except Exception as e:
 			return False

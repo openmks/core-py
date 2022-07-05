@@ -49,12 +49,13 @@ class UDPBroadcaster(co_definitions.ILayer):
 		del_nodes = []
 		for key in self.NodesList:
 			nodes = self.NodesList[key]
-			if time.time() - int(nodes["timestamp"]["last_updated"]) > 20:
+			if time.time() - int(nodes["timestamp"]["last_updated"]) > 30:
 				del_nodes.append(key)
 		for key in del_nodes:
 			del self.NodesList[key]
 	
 	def ServerThread(self):
+		co_logger.LOGGER.Log("(UDPBroadcaster)# Load config", 1)
 		status = self.Config.Load()
 		if status is False:
 			return

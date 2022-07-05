@@ -10,6 +10,7 @@ from core import co_definitions
 from core import co_file
 from core.mks import mks_config
 from core import co_logger
+from core import co_common
 
 class WebsocketLayer():
 	def __init__(self):
@@ -114,8 +115,9 @@ class ApplicationLayer(co_definitions.ILayer):
 	def __init__(self):
 		co_definitions.ILayer.__init__(self)
 		self.WSHandlers = {
-			'get_file': 	self.GetFileRequestHandler,
-			'get_resource': self.GetResourceRequestHandler,
+			'get_file': 		self.GetFileRequestHandler,
+			'get_resource': 	self.GetResourceRequestHandler,
+			'get_iface_list': 	self.GetIfaceListHandler
 		}
 		self.Ip 	    = None
 		self.Port 	    = None
@@ -209,6 +211,12 @@ class ApplicationLayer(co_definitions.ILayer):
 		return {
 			'file_path': packet["payload"]["file_path"],
 			'content': content.encode("utf-8").hex()
+		}
+	
+	def GetIfaceListHandler(self, sock, packet):
+		co_logger.LOGGER.Log("GetIfaceListHandler {0}".format(packet), 1)
+		return {
+			"ifaces": co_common.GetIPList()
 		}
 	
 	def WSConnectedHandler(self, ws_id):

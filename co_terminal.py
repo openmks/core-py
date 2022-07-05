@@ -18,9 +18,9 @@ class TerminalLayer(co_definitions.ILayer):
 			"web":			self.WebHandler,
 			"exit":			self.ExitHandler,
 			"whoami":		self.WhoAmIHandler,
-			"iface":		self.IFaceHandler,
+			"iface":		self.IFaceHandler
 		}
-	
+
 	def IFaceHandler(self, data):
 		network_cards = mks_config.NodeConfig().ListIface()
 		for idx, network in enumerate(network_cards):
@@ -52,6 +52,9 @@ class TerminalLayer(co_definitions.ILayer):
 		path = "http://{0}:{1}".format(str(self.Config.Application["server"]["address"]["ip"]), str(self.Config.Application["server"]["web"]["port"]))
 		window = webview.create_window(self.ApplicationName, path, width=1600, height=800) # fullscreen=True
 		webview.start()
+	
+	def AttachApplication(self, app):
+		self.Application = app
 	
 	def Run(self):
 		status = self.Config.Load()

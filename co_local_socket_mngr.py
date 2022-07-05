@@ -201,13 +201,122 @@ class SocketHive():
 		return True
 
 class Networking(co_definitions.ILayer):
-	def __init__(self):
+	def __init__(self, handlers):
 		co_definitions.ILayer.__init__(self)
 		self.Hive = SocketHive()
 		self.Hive.SocketDataArrivedCallback = self.SocketDataArrivedHandler
-		self.Hive.SocketClosedCallback = self.SocketClosedHandler
-		self.Hive.SocketCreatedCallback	= self.SocketCreatedHandler
-		self.DataArrivedEventQueue = None
+		self.Hive.SocketClosedCallback 		= self.SocketClosedHandler
+		self.Hive.SocketCreatedCallback		= self.SocketCreatedHandler
+		self.DataArrivedEventQueue 			= None
+		
+		self.Handlers = handlers
+		self.Handlers["connect_neighbor"] 		= self.ConnectNeighborHandler
+		self.Handlers["disconnect_neighbor"] 	= self.DisconnectNeighborHandler
+		self.Handlers["send_data_to_neighbor"] 	= self.SendDataToNeighborHandler
+	
+	def ConnectNeighborHandler(self, sock, packet):
+		hash = None
+		if "payload" not in packet:
+			return {
+				"error": "No payload",
+				"hash": hash
+			}
+		
+		if "ip" not in packet["payload"]:
+			return {
+				"error": "No IP address",
+				"hash": hash
+			}
+		
+		if "port" not in packet["payload"]:
+			return {
+				"error": "No IP port",
+				"hash": hash
+			}
+		
+		ip 		= packet["payload"]["ip"]
+		port 	= packet["payload"]["port"]
+
+		try:
+			hash = self.Connect(ip, port)
+		except Exception as e:
+			return {
+				"error": str(e),
+				"hash": hash
+			}
+			
+		return {
+			"error": "",
+			"hash": hash
+		}
+
+	def DisconnectNeighborHandler(self, sock, packet):
+		if "payload" not in packet:
+			return {
+				"error": "No payload"
+			}
+		
+		if "ip" not in packet["payload"]:
+			return {
+				"error": "No IP address"
+			}
+		
+		if "port" not in packet["payload"]:
+			return {
+				"error": "No IP port"
+			}
+		
+		ip 		= packet["payload"]["ip"]
+		port 	= packet["payload"]["port"]
+
+		try:
+			self.Disconnect(ip, port)
+		except Exception as e:
+			return {
+				"error": str(e)
+			}
+			
+		return {
+			"error": ""
+		}
+	
+	def SendDataToNeighborHandler(self, sock, packet):
+		if "payload" not in packet:
+			return {
+				"error": "No payload"
+			}
+		
+		if "ip" not in packet["payload"]:
+			return {
+				"error": "No IP address"
+			}
+		
+		if "port" not in packet["payload"]:
+			return {
+				"error": "No IP port"
+			}
+		
+		if "data" not in packet["payload"]:
+			return {
+				"error": "No data"
+			}
+		
+		ip 		= packet["payload"]["ip"]
+		port 	= packet["payload"]["port"]
+		data 	= packet["payload"]["data"]
+
+		try:
+			status = self.Send(ip, port, data)
+		except Exception as e:
+			return {
+				"error": str(e),
+				"status": status
+			}
+			
+		return {
+			"error": "",
+			"status": status
+		}
 	
 	def SocketCreatedHandler(self, data):
 		if self.DataArrivedEventQueue is not None:
