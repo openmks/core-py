@@ -12,6 +12,7 @@ class NodeConfig():
 		self.Terminal 		= None
 		self.Logger 		= None
 		self.Network 		= None
+		self.User 			= None
 		self.Hash 			= None
 		self.NetworkCards	= co_common.GetIPList()
 		self.LocalIPAddress = ""
@@ -33,10 +34,16 @@ class NodeConfig():
 		
 		try:
 			config = json.loads(strJson)
-			self.Application = config["application"]
-			self.Terminal 	 = config["terminal"]
-			self.Logger 	 = config["logger"]
-			self.Network	 = config["network"]
+			if "application" in config:
+				self.Application = config["application"]
+			if "terminal" in config:
+				self.Terminal = config["terminal"]
+			if "logger" in config:
+				self.Logger = config["logger"]
+			if "network" in config:
+				self.Network = config["network"]
+			if "user" in config:
+				self.User = config["user"]
 
 			self.LocalIPAddress = self.GetIPAddress()
 			if self.LocalIPAddress is not None:

@@ -17,10 +17,21 @@ class Beaconer():
 		self.SecTicker			= 0
 
 		self.Multicast.RegisterEventQueue(self.MulticastIn)
-		self.Handlers 			= handlers
+		self.Handlers 					= handlers
 		self.Handlers["get_neighbors"]	= self.GetNeighborsHandler
-		
+		self.Handlers["find_neighbors"]	= self.FindNeighborsHandler
+	
+	def FindNeighborsHandler(self, sock, packet):
+		info = packet["payload"]["info"]
+		self.BeaconFind(info)
+
+		return {
+			"status": True
+		}
+	
 	def GetNeighborsHandler(self, sock, packet):
+		ams_net_id = packet["payload"]["ams_net_id"]
+		self.BeaconFind()
 		return {
 			"users": self.Users
 		}
@@ -29,6 +40,14 @@ class Beaconer():
 		hash_key = info["data"]["hash"]
 		if hash_key == self.Multicast.Config.Hash:
 			return
+
+		if "beacon_find" in info["data"]["cmd"]:
+			sonar_info = info["data"]["info"]
+			if sonar_info["name"] == self.Multicast.Config.Application["name"]:
+				self.Beacon()
+			else:
+				# Classification
+				pass
 		
 		event_name 	= "update"
 		ip 		 	= info["sender"]["ip"]
@@ -49,11 +68,6 @@ class Beaconer():
 		for key in self.Users:
 			user = self.Users[key]
 			if time.time() - int(user["timestamp"]["last_updated"]) > 30:
-				#ip 		 = user["sender"]["ip"]
-				#port 	 = user["data"]["server"]["socket"]["port"]
-				#hash_key = co_security.Hashes().GetHashMd5("{0}_{1}".format(ip,str(port)))
-				# User disconnected
-				# print("(MulticastData)# Timeout {0}:{1} ({2})".format(ip, port, hash_key))
 				del_users.append(key)
 		for key in del_users:
 			if self.UserEventsCallback is not None:
@@ -61,8 +75,28 @@ class Beaconer():
 			del self.Users[key]
 	
 	def Beacon(self):
+		multicast_msg 			= self.Multicast.Config.Application
+		multicast_msg["hash"] 	= self.Multicast.Config.Hash
+		multicast_msg["cmd"] 	= "beacon"
+		multicast_msg["ver"] 	= 1.0
+		self.Multicast.Send(json.dumps(multicast_msg))
+	
+	def BeaconFind(self, info):
 		multicast_msg = self.Multicast.Config.Application
+		multicast_msg["cmd"]  = "beacon_find",
+		multicast_msg["ver"]  = 1.0,
 		multicast_msg["hash"] = self.Multicast.Config.Hash
+		multicast_msg["info"] = {
+			"name": info["name"],
+			"identification": {
+				"class": {
+					"category": info["category"],
+					"group": info["group"],
+					"type": info["type"]
+				}
+			}
+		}
+		
 		self.Multicast.Send(json.dumps(multicast_msg))
 	
 	def Run(self):
