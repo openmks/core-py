@@ -1,10 +1,10 @@
 #!/usr/bin/python
-import os
-import sys
-import json
 import threading
 import queue
 import _thread
+import traceback
+
+from core import co_logger
 
 class Manager():
     def __init__(self, handler):
@@ -28,7 +28,7 @@ class Manager():
             try:
                 self.LocalQueue.put(item)
             except Exception as e:
-                print("({classname})# ERROR [QueueItem] {0} {error}".format(item,classname=self.ClassName,error=str(e)))
+                co_logger.LOGGER.Log("Queue [QueueItem]\n{}\n(Exception): {} \n=======\nTrace: {}=======".format(item, str(e), traceback.format_exc()), 1)
             self.Locker.release()
 
     def Worker(self):
@@ -38,4 +38,4 @@ class Manager():
                 if self.HandlerCallback is not None and item is not None:
                     self.HandlerCallback(item)
             except Exception as e:
-                print("({classname})# ERROR - [Worker] {0} {error}".format(item,classname=self.ClassName,error=str(e)))
+                co_logger.LOGGER.Log("Queue [Worker]\n{}\n(Exception): {} \n=======\nTrace: {}=======".format(item, str(e), traceback.format_exc()), 1)

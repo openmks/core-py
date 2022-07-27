@@ -4,6 +4,7 @@ import time
 import _thread
 from collections import OrderedDict
 from geventwebsocket import WebSocketServer, WebSocketApplication, Resource
+import traceback
 
 from core import co_webserver
 from core import co_definitions
@@ -235,7 +236,7 @@ class ApplicationLayer(co_definitions.ILayer):
 					packet["payload"] = message
 					WSManager.Send(id(ws), packet)
 		except Exception as e:
-			co_logger.LOGGER.Log("WSDataArrivedHandler ({}) Exception: {}".format(command, str(e)), 1)
+			co_logger.LOGGER.Log("WSDataArrivedHandler ({}) Exception: {} \n=======\nTrace: {}=======".format(command, str(e), traceback.format_exc()), 1)
 
 	def WSDisconnectedHandler(self, ws_id):
 		if len(self.WebSocketDisconnectedEventCallbacks) > 0:
