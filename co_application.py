@@ -55,7 +55,6 @@ class WebsocketLayer():
 	
 	def WSDataArrived(self, ws, data):
 		packet = json.loads(data)
-		# print ("({classname})# Data {0}".format(id(ws),classname=self.ClassName))
 		if self.OnDataArrivedEvent is not None:
 			self.OnDataArrivedEvent(ws, packet)
 	
@@ -70,7 +69,10 @@ class WebsocketLayer():
 	
 	def EmitEvent(self, data):
 		for key in self.ApplicationSockets:
-			self.ApplicationSockets[key].send(json.dumps(data))
+			try:
+				self.ApplicationSockets[key].send(json.dumps(data))
+			except Exception as e:
+				co_logger.LOGGER.Log("({classname})# [ERROR] EmitEvent {0}".format(str(e), classname=self.ClassName), 1)
 	
 	def IsServerRunnig(self):
 		return self.ServerRunning
@@ -102,7 +104,6 @@ class WSApplication(WebSocketApplication):
 		WSManager.AppendSocket(id(self.ws), self.ws)
 
 	def on_message(self, message):
-		# print ("({classname})# MESSAGE RECIEVED {0} {1}".format(id(self.ws),message,classname=self.ClassName))
 		if message is not None:
 			WSManager.WSDataArrived(self.ws, message)
 		else:
@@ -221,6 +222,7 @@ class ApplicationLayer(co_definitions.ILayer):
 		}
 	
 	def WSConnectedHandler(self, ws_id):
+		co_logger.LOGGER.Log("WSConnectedHandler {}".format(ws_id), 1)
 		if len(self.WebSocketConnectedEventCallbacks) > 0:
 			for callback in self.WebSocketConnectedEventCallbacks:
 				callback(ws_id)
@@ -239,6 +241,7 @@ class ApplicationLayer(co_definitions.ILayer):
 			co_logger.LOGGER.Log("WSDataArrivedHandler ({}) Exception: {} \n=======\nTrace: {}=======".format(command, str(e), traceback.format_exc()), 1)
 
 	def WSDisconnectedHandler(self, ws_id):
+		co_logger.LOGGER.Log("WSDisconnectedHandler {}".format(ws_id), 1)
 		if len(self.WebSocketDisconnectedEventCallbacks) > 0:
 			for callback in self.WebSocketDisconnectedEventCallbacks:
 				callback(ws_id)

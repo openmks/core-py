@@ -1,6 +1,7 @@
 import time
 import json
 import _thread
+import socket
 
 from core import co_queue
 from core import co_security
@@ -62,6 +63,21 @@ class Beaconer():
 		self.Users[hash_key] = info
 		if self.UserEventsCallback is not None:
 			self.UserEventsCallback(event_name, info)
+	
+	def ForceDisconnetedusersCheck(self):
+		del_users = []
+		for key in self.Users:
+			user = self.Users[key]
+			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			try:
+				resp = sock.connect((user["sender"]["ip"], user["data"]["server"]["socket"]["port"]))
+			except:
+				del_users.append(key)
+		
+		for key in del_users:
+			if self.UserEventsCallback is not None:
+				self.UserEventsCallback("del", self.Users[key])
+			del self.Users[key]
 	
 	def CheckDisconnectedUsers(self):
 		del_users = []
