@@ -190,6 +190,14 @@ class ADS():
 
 		return value
 	
+	def CheckSymbol(self, symbol):
+		value = self.ReadSymbol(symbol)
+
+		if value is None:
+			return False
+		
+		return True
+	
 	def WriteSymbol(self, name, value):
 		self.PLC.write_by_name(name, value)
 	

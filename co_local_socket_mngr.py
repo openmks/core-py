@@ -50,15 +50,38 @@ class SocketHive():
 			sock_info = self.SockMap[sock]
 			# Update TS for monitoring
 			sock_info["data"]["timestamp"]["last_updated"] = time.time()
-			# Raise event for listeners
-			if self.SocketDataArrivedCallback is not None:
-				self.SocketDataArrivedCallback({
-					"event": "new_data",
-					"event_data": {
-						"sock_info": sock_info,
-						"data": item["data"]["data"]
-					}
-				})
+			# Append recieved data to the previuose portion
+			sock_info["data"]["stream"] += item["data"]["data"]
+
+			mks_data 		= sock_info["data"]["stream"]
+			mks_data_len 	= len(sock_info["data"]["stream"])
+
+			working = True
+			while working is True:
+				mkss_index 		= mks_data.find("MKSS".encode())
+				mkse_index 		= mks_data.find("MKSE".encode())
+
+				if mkss_index != -1 and mkse_index != -1:
+					# Found MKS packet
+					data = mks_data[mkss_index+4:mkse_index]
+					# co_logger.LOGGER.Log("Networking (SocketEventHandler) PACKET.", 1)
+					# Raise event for listeners
+					if self.SocketDataArrivedCallback is not None:
+						self.SocketDataArrivedCallback({
+							"event": "new_data",
+							"event_data": {
+								"sock_info": sock_info,
+								"data": data
+							}
+						})
+					
+					mks_data = mks_data[mkse_index+4:mks_data_len]
+					sock_info["data"]["stream"] = mks_data
+				else:
+					# Did not found MKS packet
+					# co_logger.LOGGER.Log("Networking (SocketEventHandler) NO MAGIC NUMBER IN PACKET.", 1)
+					return
+			
 		elif "close_sock" in item["type"]:
 			sock = item["data"]
 			if sock not in self.SockMap:
@@ -76,7 +99,9 @@ class SocketHive():
 			hash_key = item["data"]["hash"]
 			data = item["data"]["data"]
 			sock_info = self.OpenConnections[hash_key]
-			sock_info["data"]["socket"].send(data.encode())
+			#co_logger.LOGGER.Log("Send {} {}".format(type(data), "MKSS"+data+"MKSE"), 1)
+			sock_info["data"]["socket"].send(("MKSS"+data+"MKSE").encode())
+			#sock_info["data"]["socket"].send(data.encode())
 	
 	def EnhiveSocket(self, sock, ip, port, callback):
 		hashes = co_security.Hashes()
@@ -89,6 +114,7 @@ class SocketHive():
 			"ip": 		ip,
 			"port": 	port,
 			"hash": 	hash_key,
+			"stream": 	bytes(),
 			"timestamp": {
 				"created": time.time(),
 				"last_updated": time.time()
@@ -263,14 +289,11 @@ class Networking(co_definitions.ILayer):
 		elif "data" in event_name:
 			sock_info 		= event_data["sock_info"]["data"]
 			sock 			= sock_info["socket"]
-			data 			= event_data["data"]
-
+			data			= event_data["data"]
 			if sock == server_socket:
-				#co_logger.LOGGER.Log("Networking (SocketEventHandler) {0}".format("SERVER"), 1)
 				if self.ServerSockDataArrivedCallback is not None:
 					self.ServerSockDataArrivedCallback(sock, sock_info, data)
 			else:
-				#co_logger.LOGGER.Log("Networking (SocketEventHandler) {0}".format("CLIENT"), 1)
 				client_callback = event_data["sock_info"]["callback"]
 				if client_callback is not None:
 					client_callback(sock, sock_info, data)
@@ -434,7 +457,7 @@ class Networking(co_definitions.ILayer):
 		self.Hive.DehiveSocket(ip, port)
 	
 	def Send(self, ip, port, data):
-		co_logger.LOGGER.Log("Networking (Send) {} {}".format(ip, port), 1)
+		# co_logger.LOGGER.Log("Networking (Send) {} {}".format(ip, port), 1)
 		return self.Hive.Send(ip, port, data)
 
 	def GetSocketInfoBySock(self, sock):

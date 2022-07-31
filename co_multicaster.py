@@ -41,6 +41,7 @@ class Multicaster(co_definitions.ILayer):
 
 		MCAST_GRP = '224.1.1.1'
 		mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
+		# mreq = struct.pack("4s4s", socket.inet_aton(MCAST_GRP), socket.inet_aton("192.168.101.2"))
 		self.ServerSocket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
 		print("(Multicaster)# Start service ({0})".format(self.Port))

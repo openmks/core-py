@@ -97,7 +97,9 @@ class File ():
 		return True
 	
 	def GetFileSize(self, path):
-		in_bytes = os.path.getsize(path)
+		in_bytes = 0.0
+		if os.path.exists(path):
+			in_bytes = os.path.getsize(path)
 
 		return in_bytes
 	
