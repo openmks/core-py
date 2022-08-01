@@ -100,7 +100,24 @@ class SocketHive():
 			data = item["data"]["data"]
 			sock_info = self.OpenConnections[hash_key]
 			#co_logger.LOGGER.Log("Send {} {}".format(type(data), "MKSS"+data+"MKSE"), 1)
-			sock_info["data"]["socket"].send(("MKSS"+data+"MKSE").encode())
+			retry = 3
+			while retry != 0:
+				try:
+					sock_info["data"]["socket"].send(("MKSS"+data+"MKSE").encode())
+					return
+				except Exception as e:
+					co_logger.LOGGER.Log("SocketQueueHandler ({}, {}) Exception: {}".format(retry, len(data), str(e)), 1)
+					retry -= 1
+			
+			if retry == 0:
+				try:
+					data_length		 = len(data)
+					data_length_half = data_length/2
+					sock_info["data"]["socket"].send(("MKSS"+data[0:data_length_half]+"MKSE").encode())
+					sock_info["data"]["socket"].send(("MKSS"+data[data_length_half:data_length]+"MKSE").encode())
+				except Exception as e:
+					co_logger.LOGGER.Log("SocketQueueHandler HALF ({}) Exception: {}".format(len(data), str(e)), 1)
+				
 			#sock_info["data"]["socket"].send(data.encode())
 	
 	def EnhiveSocket(self, sock, ip, port, callback):
@@ -199,6 +216,7 @@ class SocketHive():
 									data += chunk
 									dataLen = len(chunk)
 								if data:
+									# co_logger.LOGGER.Log("Networking ({}) Data -> {}".format(len(data), data), 1)
 									# Append to new data queue
 									self.SocketQueue.QueueItem({
 										"type": "new_data",

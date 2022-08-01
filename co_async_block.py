@@ -38,7 +38,9 @@ class AsyncBlock():
 			try:
 				self.Signal.clear()
 				self.Network.Send(self.IP, self.Port, json.dumps(request))
-				self.Signal.wait(None)
+				# co_logger.LOGGER.Log("AsyncBlock (Execute) Wait", 1)
+				self.Signal.wait(8.0)
+				# co_logger.LOGGER.Log("AsyncBlock (Execute) Set", 1)
 				return self.PayloadResponse
 			except Exception as e:
 				co_logger.LOGGER.Log("AsyncBlock (Execute) Exception: {} \n=======\nTrace: {}=======".format(str(e), traceback.format_exc()), 1)

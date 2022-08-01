@@ -28,7 +28,7 @@ class MKSSocket():
 					'last_updated': 1659274757.1712267}
 				}
 			'''
-			co_logger.LOGGER.Log("MKSDataArrivedHandler {} {} {}".format(sock, sock_info, packet), 1)
+			# co_logger.LOGGER.Log("MKSDataArrivedHandler {} {} {}".format(sock, sock_info, packet), 1)
 			command = packet["header"]["command"]
 			if self.WSHandlers is not None:
 				if command in self.WSHandlers.keys():
@@ -42,7 +42,8 @@ class MKSSocket():
 					self.Locker.release()
 		except Exception as e:
 			co_logger.LOGGER.Log("MKSDataArrivedHandler ({}) Exception: {} \n=======\nTrace: {}=======".format(command, str(e), traceback.format_exc()), 1)
-			self.Locker.release()
+			if self.Locker.locked() is True:
+				self.Locker.release()
 	
 	def Run(self):
 		self.Network.SetServerSockDataArrivedCallback(self.MKSDataArrivedHandler)
@@ -69,4 +70,5 @@ class MKSSocket():
 					self.Network.Send(sock_info["ip"], sock_info["port"], json.dumps(request))
 			self.Locker.release()
 		except:
-			self.Locker.release()
+			if self.Locker.locked() is True:
+				self.Locker.release()
