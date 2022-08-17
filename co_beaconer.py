@@ -21,6 +21,8 @@ class Beaconer():
 		self.Handlers 					= handlers
 		self.Handlers["get_neighbors"]	= self.GetNeighborsHandler
 		self.Handlers["find_neighbors"]	= self.FindNeighborsHandler
+
+		self.MulticastEnbled 	= False
 	
 	def FindNeighborsHandler(self, sock, packet):
 		info = packet["payload"]["info"]
@@ -38,6 +40,10 @@ class Beaconer():
 		}
 	
 	def MulticastData(self, info):
+		if self.MulticastEnbled is False:
+			co_logger.LOGGER.Log("(Beaconer)# [MulticastData] Milticast is disabled", 1)
+			return
+		
 		hash_key = info["data"]["hash"]
 		if hash_key == self.Multicast.Config.Hash:
 			return
@@ -65,6 +71,10 @@ class Beaconer():
 			self.UserEventsCallback(event_name, info)
 	
 	def ForceDisconnetedusersCheck(self):
+		if self.MulticastEnbled is False:
+			co_logger.LOGGER.Log("(Beaconer)# [ForceDisconnetedusersCheck] Milticast is disabled", 1)
+			return
+		
 		del_users = []
 		for key in self.Users:
 			user = self.Users[key]
@@ -98,6 +108,10 @@ class Beaconer():
 		self.Multicast.Send(json.dumps(multicast_msg))
 	
 	def BeaconFind(self, info):
+		if self.MulticastEnbled is False:
+			co_logger.LOGGER.Log("(Beaconer)# [BeaconFind] Milticast is disabled", 1)
+			return
+		
 		multicast_msg = self.Multicast.Config.Application
 		multicast_msg["cmd"]  = "beacon_find",
 		multicast_msg["ver"]  = 1.0,
@@ -123,6 +137,14 @@ class Beaconer():
 		self.Multicast.Stop()
 
 	def Worker(self):
+		self.MulticastEnbled = self.Multicast.Config.Application["server"]["broadcast"]["enabled"]
+
+		if self.MulticastEnbled is False:
+			co_logger.LOGGER.Log("(Beaconer)# Milticast is disabled", 1)
+			return
+		
+		self.Running = True
+		
 		co_logger.LOGGER.Log("(Beaconer)# Start worker", 1)
 		self.MulticastIn.Start()
 		self.Multicast.Run()

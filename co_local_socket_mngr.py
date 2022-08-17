@@ -120,6 +120,10 @@ class SocketHive():
 				
 			#sock_info["data"]["socket"].send(data.encode())
 	
+	def GetHash(self, ip, port):
+		hashes = co_security.Hashes()
+		return hashes.GetHashMd5("{0}_{1}".format(ip,str(port)))
+	
 	def EnhiveSocket(self, sock, ip, port, callback):
 		hashes = co_security.Hashes()
 		hash_key = hashes.GetHashMd5("{0}_{1}".format(ip,str(port)))
@@ -349,7 +353,7 @@ class Networking(co_definitions.ILayer):
 		port 	= packet["payload"]["port"]
 
 		try:
-			hash = self.Connect(ip, port)
+			hash = self.Connect(ip, port, None)
 		except Exception as e:
 			return {
 				"error": str(e),
@@ -464,10 +468,10 @@ class Networking(co_definitions.ILayer):
 		try:
 			sock.connect((ip, port))
 			hash_key = self.Hive.EnhiveSocket(sock, ip, port, callback)
-			co_logger.LOGGER.Log("Networking (Connect) {} {} SUCCESS".format(ip, port), 1)
+			# co_logger.LOGGER.Log("Networking (Connect) {} {} SUCCESS".format(ip, port), 1)
 			return hash_key
 		except Exception as e:
-			co_logger.LOGGER.Log("Networking (Connect) {} {} FAILED\n{}".format(ip, port,e), 1)
+			# co_logger.LOGGER.Log("Networking (Connect) {} {} FAILED\n{}".format(ip, port,e), 1)
 			return None
 		
 	def Disconnect(self, ip, port):
@@ -477,6 +481,10 @@ class Networking(co_definitions.ILayer):
 	def Send(self, ip, port, data):
 		# co_logger.LOGGER.Log("Networking (Send) {} {}".format(ip, port), 1)
 		return self.Hive.Send(ip, port, data)
+	
+	def GetSocketInfoByIpPort(self, ip, port):
+		hash_key = self.Hive.GetHash(ip, port)
+		return self.GetConnectionInfo(hash_key)
 
 	def GetSocketInfoBySock(self, sock):
 		if sock in self.Hive.SockMap:

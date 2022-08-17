@@ -17,6 +17,10 @@ class Multicaster(co_definitions.ILayer):
 		self.Port 					= 0
 		self.ServerRunning 			= True
 		self.DataArrivedEventQueue 	= None
+		self.ConfigLoaded 			= False
+
+		self.ConfigLoaded = self.Config.Load()
+			
 	
 	def Run(self):
 		_thread.start_new_thread(self.ServerThread, ())
@@ -25,10 +29,10 @@ class Multicaster(co_definitions.ILayer):
 		self.ServerRunning = False
 
 	def ServerThread(self):
-		status = self.Config.Load()
-		if status is False:
+		if self.ConfigLoaded is False:
 			return
 		
+		self.ServerRunning = True
 		self.Port = self.Config.Application["server"]["broadcast"]["port"]
 
 		MULTICAST_TTL = 2
@@ -40,8 +44,8 @@ class Multicaster(co_definitions.ILayer):
 		self.ServerSocket.bind(('', self.Port))
 
 		MCAST_GRP = '224.1.1.1'
-		mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
-		# mreq = struct.pack("4s4s", socket.inet_aton(MCAST_GRP), socket.inet_aton("192.168.101.2"))
+		# mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
+		mreq = struct.pack("4s4s", socket.inet_aton(MCAST_GRP), socket.inet_aton("192.168.101.2"))
 		self.ServerSocket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
 		print("(Multicaster)# Start service ({0})".format(self.Port))
@@ -63,6 +67,9 @@ class Multicaster(co_definitions.ILayer):
 		buffer = str.encode(data)
 		if self.ClientSocket is not None:
 			self.ClientSocket.sendto(buffer, ('224.1.1.1', self.Port))
+		else:
+			return False
+		
 		return True
 	
 	def RegisterEventQueue(self, e_queue):
