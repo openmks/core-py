@@ -63,6 +63,9 @@ class Logger():
     
     def SetLogLevel(self, level):
         self.LogType = level
+    
+    def DisableLogger(self):
+        self.LogerEnabled = False
 
     def EnableLogger(self):
         # Create folder

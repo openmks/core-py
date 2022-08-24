@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+import time
 
 class File ():
 	def __init__(self):
@@ -95,6 +96,19 @@ class File ():
 			return False
 
 		return True
+	
+	def GetFileDate(self, path):
+		ti_c = os.path.getctime(path)
+		ti_m = os.path.getmtime(path)
+		
+		# Converting the time in seconds to a timestamp
+		c_ti = time.ctime(ti_c)
+		m_ti = time.ctime(ti_m)
+
+		return {
+			"created": c_ti,
+			"modified": m_ti
+		}
 	
 	def GetFileSize(self, path):
 		in_bytes = 0.0

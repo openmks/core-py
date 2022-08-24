@@ -1,8 +1,10 @@
 import pyads
+import time
+import _thread
 
 class EmuADS():
 	def __init__(self):
-		self.AMSNetId   	= None
+		self.AMSNetId   	= "Simulated"
 		self.Symbols		= [{
 			"name": "tbl_bla",
 			"type": "tbl_type",
@@ -12,10 +14,16 @@ class EmuADS():
 			}
 		}]
 		self.IsConnected	= False
+		self.Counter 		= 0
+		self.PrevTs 		= time.time_ns()
+		self.CurrTs 		= time.time_ns()
 	
 	def Connect(self, ams_net_id):
 		self.IsConnected = True
 		self.AMSNetId 	 = ams_net_id
+
+		# Start thread
+		_thread.start_new_thread(self.Worker, ())
 
 		return True
 	
@@ -39,15 +47,10 @@ class EmuADS():
 		pass
 
 	def GetValuesFromNameListBurst(self, names):
-		symbols = []
-		for symbol in self.Symbols:
-			symbols.append({
-				"name": symbol["name"],
-				"type": symbol["type"],
-				"value": "value",
-				"comment": symbol["comment"],
-				"index_group": symbol["index_group"]
-			})
+		symbols = {}
+		for symbol in names:
+			symbols[symbol] = self.Counter
+		# print("R: {} {}".format(self.Counter, (self.CurrTs-self.PrevTs)/1000000.0))
 			
 		return symbols
 
@@ -63,10 +66,24 @@ class EmuADS():
 		symbols = []
 		for symbol in self.Symbols:
 			data = {}
-			data[symbol["name"]] = "value"
+			data[symbol["name"]] = self.Counter
 			symbols.append(data)
 			
 		return symbols
+	
+	def Worker(self):
+		while self.IsConnected is True:
+			try:
+				self.PrevTs 	= self.CurrTs
+				self.CurrTs 	= time.time_ns()
+
+				self.Counter += 1
+				time.sleep(0.001)
+			except Exception as e:
+				pass
+	
+	def CheckSymbol(self, symbol):
+		return True
 
 class ADS():
 	def __init__(self):
@@ -234,7 +251,6 @@ class ADS():
 			})
 		
 		return symbols
-
 
 	def GetAvailableSymbols(self):
 		self.Symbols = self.PLC.get_all_symbols()

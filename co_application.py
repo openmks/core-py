@@ -155,6 +155,9 @@ class ApplicationLayer(co_definitions.ILayer):
 			co_logger.LOGGER.Log("ERROR - Wrong configuration format", 1)
 			return False
 		
+		if self.Config.Logger["enabled"] is False:
+			co_logger.LOGGER.DisableLogger()
+		
 		co_logger.LOGGER.Log("Local IP {0}".format(self.Config.LocalIPAddress), 1)
 		ip_addr = str(self.Config.Application["server"]["address"]["ip"])
 		if self.Config.Application["server"]["address"]["use_local_ip"] is True:
