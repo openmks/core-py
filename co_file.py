@@ -64,6 +64,12 @@ class File ():
 		file.write(data)
 		file.close()
 	
+	def PathExists(self, folder_path):
+		if os.path.exists(folder_path):
+			return True
+
+		return False
+	
 	def CreateFloder(self, folder_path):
 		try:
 			if os.path.exists(folder_path):

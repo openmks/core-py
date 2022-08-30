@@ -130,6 +130,9 @@ class ApplicationLayer(co_definitions.ILayer):
 
 		self.WebSocketConnectedEventCallbacks 		= []
 		self.WebSocketDisconnectedEventCallbacks 	= []
+
+		self.ErrorCallback 	= None
+		self.FatalError 	= False
 	
 	def RegisterConnectedEvent(self, callback):
 		self.WebSocketConnectedEventCallbacks.append(callback)
