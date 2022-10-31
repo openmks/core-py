@@ -23,9 +23,9 @@ class UART:
 		self.DataArrivedCallback		= None
 	
 	def Connect(self):
-		print ("UART on port {port} with boudrate {boud} CONNECTING  ...".format(port=self.Port, boud=str(self.Baud)))
+		print("[UART] Connect port {port} with boudrate {boud}...".format(port=self.Port, boud=str(self.Baud)))
 		try:
-			self.SerialAdapter = serial.Serial()
+			self.SerialAdapter = serial.Serial(write_timeout = 1)
 			self.SerialAdapter.port		= self.Port
 			self.SerialAdapter.baudrate	= self.Baud
 
@@ -37,16 +37,17 @@ class UART:
 
 			if self.SerialAdapter is not None:
 				_thread.start_new_thread(self.RecieveDataThread, ())
-				print ("UART on port {port} with boudrate {boud} CONNECTED ...".format(port=self.Port, boud=str(self.Baud)))
+				print ("[UART] Connected to port {port} with boudrate {boud}.".format(port=self.Port, boud=str(self.Baud)))
+				time.sleep(0.5)
 			return True
 		except:
-			print("Failed to connect with " + str(self.Port) + ' at ' + str(self.Baud) + ' baudrate.')
+			print("[UART] <EXCEPTION> Failed to connect with " + str(self.Port) + ' at ' + str(self.Baud) + ' baudrate.')
 			return False
 	
 	def Disconnect(self):
 		self.IsRecieverRunning = False
 		self.SerialAdapter.close()
-		print ("UART on port {port} DISCONNECTED ...".format(port=self.Port))
+		print ("[UART] Disconnect from port {port}.".format(port=self.Port))
 	
 	def SetBytesPerFrame(self, byteperframe):
 		self.BytesPerFrame = byteperframe
@@ -57,14 +58,14 @@ class UART:
 				self.DataBytes = self.SerialAdapter.read(self.BytesPerFrame)
 				if self.DataBytes != "" and len(self.DataBytes) > 0:
 					#print(self.DataBytes)
-					self.DataBytesLength 	= len(self.DataBytes)
+					self.DataBytesLength = len(self.DataBytes)
 					
 					if self.DataArrivedCallback is not None:
 						self.DataArrivedCallback(self.DataBytes, self.DataBytesLength)
 			except:
 				pass
-		print("UART reciever thread closed ...\n")
+		print("[UART] Reciever thread closed.")
 	
 	def Write(self, data):
-		#print ("[OUT] " + ":".join("{:02x}".format(ord(c)) for c in str(data)))
+		# print ("[OUT] " + ":".join("{:02x}".format(ord(c)) for c in str(data)))
 		self.SerialAdapter.write(data.encode())

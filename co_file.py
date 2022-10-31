@@ -13,7 +13,7 @@ class File ():
 		file.close()
 
 	def Save (self, filename, data):
-		file = open(filename, "w")
+		file = open(filename, "w", encoding="utf8")
 		file.write(data)
 		file.close()
 
@@ -36,11 +36,15 @@ class File ():
 		file.close()
 
 	def Load(self, filename):
-		if os.path.isfile(filename) is True:
-			file = open(filename, "r")
-			data = file.read()
-			file.close()
-			return data
+		try:
+			if os.path.isfile(filename) is True:
+				file = open(filename, "r", encoding="utf8")
+				data = file.read()
+				file.close()
+				return data
+		except Exception as e:
+			print("[File] (Load) {} Exception {}".format(filename, str(e)))
+
 		return ""
 	
 	def LoadJson(self, filename):
@@ -123,8 +127,8 @@ class File ():
 
 		return in_bytes
 	
-	def SaveJSON(self, filename, data):
-		db_file = open(filename, "w")
+	def SaveJSON(self, file_path, data):
+		db_file = open(file_path, "w")
 		json.dump(data, db_file, indent=2)
 		db_file.close()
 	

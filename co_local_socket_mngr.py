@@ -64,7 +64,6 @@ class SocketHive():
 				if mkss_index != -1 and mkse_index != -1:
 					# Found MKS packet
 					data = mks_data[mkss_index+4:mkse_index]
-					# co_logger.LOGGER.Log("Networking (SocketEventHandler) PACKET.", 1)
 					# Raise event for listeners
 					if self.SocketDataArrivedCallback is not None:
 						self.SocketDataArrivedCallback({
@@ -81,7 +80,6 @@ class SocketHive():
 					# Did not found MKS packet
 					# co_logger.LOGGER.Log("Networking (SocketEventHandler) NO MAGIC NUMBER IN PACKET.", 1)
 					return
-			
 		elif "close_sock" in item["type"]:
 			sock = item["data"]
 			if sock not in self.SockMap:
@@ -96,29 +94,28 @@ class SocketHive():
 					"event_data": sock_info["data"]
 				})
 		elif "send" in item["type"]:
-			hash_key = item["data"]["hash"]
-			data = item["data"]["data"]
-			sock_info = self.OpenConnections[hash_key]
-			#co_logger.LOGGER.Log("Send {} {}".format(type(data), "MKSS"+data+"MKSE"), 1)
-			retry = 3
-			while retry != 0:
-				try:
+			hash_key 	= item["data"]["hash"]
+			data 		= item["data"]["data"]
+			sock_info 	= self.OpenConnections[hash_key]
+
+			try:
+				data_length		= len(data)
+				chunck_size 	= 65536
+				num_of_chuncks 	= int(data_length / chunck_size)
+
+				if num_of_chuncks == 0:
 					sock_info["data"]["socket"].send(("MKSS"+data+"MKSE").encode())
-					return
-				except Exception as e:
-					co_logger.LOGGER.Log("SocketQueueHandler ({}, {}) Exception: {}".format(retry, len(data), str(e)), 1)
-					retry -= 1
-			
-			if retry == 0:
-				try:
-					data_length		 = len(data)
-					data_length_half = data_length/2
-					sock_info["data"]["socket"].send(("MKSS"+data[0:data_length_half]+"MKSE").encode())
-					sock_info["data"]["socket"].send(("MKSS"+data[data_length_half:data_length]+"MKSE").encode())
-				except Exception as e:
-					co_logger.LOGGER.Log("SocketQueueHandler HALF ({}) Exception: {}".format(len(data), str(e)), 1)
-				
-			#sock_info["data"]["socket"].send(data.encode())
+				else:
+					for idx in range(num_of_chuncks):
+						if idx == 0:
+							sock_info["data"]["socket"].send(("MKSS"+data[idx * chunck_size:(idx + 1) * chunck_size]).encode())
+						else:
+							sock_info["data"]["socket"].send((data[idx * chunck_size:(idx + 1) * chunck_size]).encode())
+						time.sleep(0.1)
+					left_over = data_length % chunck_size
+					sock_info["data"]["socket"].send((data[data_length-left_over:data_length]+"MKSE").encode())
+			except Exception as e:
+				co_logger.LOGGER.Log("SocketQueueHandler [SEND] ({}) Exception: {}".format(len(data), str(e)), 1)
 	
 	def GetHash(self, ip, port):
 		hashes = co_security.Hashes()

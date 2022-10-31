@@ -1,12 +1,14 @@
 from core import co_definitions
 from core import co_file
 from core.mks import mks_config
+from core import co_logger
 
 import subprocess
 
 class TerminalLayer(co_definitions.ILayer):
 	def __init__(self):
 		co_definitions.ILayer.__init__(self)
+		self.ClassName			= "TerminalLayer"
 		self.ApplicationName 	= "Application"
 		self.Application    	= None
 		self.ProcessRunning 	= True
@@ -42,15 +44,19 @@ class TerminalLayer(co_definitions.ILayer):
 	
 	def WebHandler(self, data):
 		# Generate command
-		cmd = '"c:\program files (x86)\Google\Chrome\Application\chrome.exe" --window-size=1500,800 -incognito --app="http://{0}:{1}"'.format(str(self.Config.Application["server"]["address"]["ip"]), str(self.Config.Application["server"]["web"]["port"]))
+		cmd = 'start chrome --window-size={},{} -incognito --app="http://{}:{}"'.format(self.Config.Application["autolaunch"]["width"], self.Config.Application["autolaunch"]["height"],str(self.Config.Application["server"]["address"]["ip"]), str(self.Config.Application["server"]["web"]["port"]))
 		objFile = co_file.File()
 		objFile.Save("ui.cmd", cmd)
 		subprocess.call(["ui.cmd"])
+		print("Exit UI session.")
+		#self.Exit()
 
 	def AppHandler(self, data):
 		import webview
 		path = "http://{0}:{1}".format(str(self.Config.Application["server"]["address"]["ip"]), str(self.Config.Application["server"]["web"]["port"]))
+		co_logger.LOGGER.Log("({classname})# (AppHandler) Path = {}".format(path, classname=self.ClassName), 1)
 		window = webview.create_window(self.ApplicationName, path, width=1600, height=800) # fullscreen=True
+		co_logger.LOGGER.Log("({classname})# (AppHandler) Window = {}".format(window, classname=self.ClassName), 1)
 		webview.start()
 	
 	def AttachApplication(self, app):
