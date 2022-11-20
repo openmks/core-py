@@ -16,8 +16,7 @@ class SymbolParser():
 			"UDINT",
 			"UINT",
 			"USINT",
-			"WORD",
-			"enum"
+			"WORD"
 		]
 
 		self.ADS_CONTAINED_DATA_TYPES = [

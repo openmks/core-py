@@ -169,10 +169,7 @@ class ADS():
 
 			# Get status of this connection
 			status, state = self.Status()
-			self.IsConnected = status
-
-			if status is True:
-				self.AMSNetId = ams_net_id
+			self.AMSNetId = ams_net_id
 
 			# print("<ADS> Trying to connect {} ... Status {}".format(ams_net_id, state))
 			return status			
@@ -190,6 +187,7 @@ class ADS():
 		except:
 			status = False
 		
+		self.IsConnected = status
 		return status, state
 	
 	def Disconnect(self):

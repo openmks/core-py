@@ -59,7 +59,7 @@ class StaticRoutes():
 			else:
 				if "availabale" in route:
 					# Check info name
-					co_logger.LOGGER.Log("(StaticRoutes)# [CheckRoutes] Check info name {}:{}".format(ip, port), 1)
+					# co_logger.LOGGER.Log("(StaticRoutes)# [CheckRoutes] Check info name {}:{}".format(ip, port), 1)
 					self.EmitEvent("exist", route)
 				else:
 					co_logger.LOGGER.Log("(StaticRoutes)# [CheckRoutes] Connection taken {}:{}".format(ip, port), 1)

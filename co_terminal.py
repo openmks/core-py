@@ -1,3 +1,5 @@
+import os
+
 from core import co_definitions
 from core import co_file
 from core.mks import mks_config
@@ -61,6 +63,7 @@ class TerminalLayer(co_definitions.ILayer):
 	
 	def AttachApplication(self, app):
 		self.Application = app
+		self.Application.CloseProcessRequestEvent = self.Exit
 	
 	def Run(self):
 		status = self.Config.Load()
@@ -92,4 +95,6 @@ class TerminalLayer(co_definitions.ILayer):
 		return True
 	
 	def Exit(self):
+		co_logger.LOGGER.Log("[Terminal] Exit process", 1)
 		self.ProcessRunning = False
+		os._exit(0)

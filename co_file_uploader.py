@@ -8,9 +8,11 @@ import _thread
 import threading
 
 from core import co_file
+from core import co_logger
 
 class FileUpload():
-	def __init__(self, name, size, chanks):
+	def __init__(self, path, name, size, chanks):
+		self.Path 					= path
 		self.Name 					= name
 		self.Size 					= size
 		self.LastFragmentNumber 	= chanks
@@ -22,6 +24,8 @@ class FileUpload():
 
 		for i in range(1, self.LastFragmentNumber + 1):
 			self.FragmentsCount += i
+		
+		co_logger.LOGGER.Log("FileUpload <NEW> {} {}".format(path, name), 1)
 
 	def AddFragment(self, content, index, size):
 		self.Fragments.append({ 
@@ -70,12 +74,14 @@ class Manager():
 		self.Uploaders						= {}
 		self.UploaderKeys 					= []
 		self.UploaderNextIndex				= 0
-		self.Path 							= "packages"
+		# self.Path 							= "packages"
+		self.UploadLocker					= threading.Lock()
+		self.Ctx.WSHandlers["upload_file"] 	= self.UploadFileHandler
 	
-	def SetUploadPath(self, path):
-		self.Path = path
-		if os.path.exists(self.Path) is False:
-			os.mkdir(self.Path)
+	#def SetUploadPath(self, path):
+	#	self.Path = path
+	#	if os.path.exists(self.Path) is False:
+	#		os.mkdir(self.Path)
 
 	def Worker(self):
 		while(self.ExitFlag):
@@ -85,7 +91,8 @@ class Manager():
 			if uploader is not None:
 				if uploader.UploadDone is True:
 					data, length = uploader.GetFileRaw()
-					co_file.File().SaveArray(os.path.join(self.Path,uploader.Name), data)
+					# TODO: Don't save if file exist
+					co_file.File().SaveArray(os.path.join(uploader.Path, uploader.Name), data)
 					self.Ctx.AsyncEvent("upload_progress", {
 						"status": "done",
 						"precentage": "100%",
@@ -150,14 +157,36 @@ class Manager():
 	def AddNewUploader(self, data):
 		self.Locker.acquire()
 		size 		= data["size"]
+		filePath	= data["file_path"]
 		fileName	= data["file"]
 		chunks 		= data["chunks"]
 		content 	= data["content"]
 		chunkSize 	= data["chunk_size"]
 		index 		= data["chunk"]
 
-		upload = FileUpload(fileName, size, chunks)
+		upload = FileUpload(filePath, fileName, size, chunks)
 		upload.AddFragment(content, index, chunkSize)
 		self.Uploaders[fileName] = upload
 		self.UploaderKeys.append(fileName)
 		self.Locker.release()
+	
+	def UploadFileHandler(self, sock, packet):
+		co_logger.LOGGER.Log("UploadFileHandler {}".format(packet["payload"]["upload"]["chunk"]), 1)
+		# TODO: Don't start if already uploading
+
+		self.UploadLocker.acquire()
+		try:
+			payload = packet["payload"]
+			if payload["upload"]["chunk"] == 1:
+				self.AddNewUploader(payload["upload"])
+			else:
+				self.UpdateUploader(payload["upload"])
+		except Exception as e:
+			co_logger.LOGGER.Log("UploadFileHandler (Exception) {0}".format(e), 1)
+		self.UploadLocker.release()
+		return {
+			'status': 'accept',
+			'chunk': payload["upload"]["chunk"],
+			'file': payload["upload"]["file"]
+		}
+	

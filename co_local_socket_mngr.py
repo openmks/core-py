@@ -302,7 +302,7 @@ class Networking(co_definitions.ILayer):
 		event_data 		= event["data"]["event_data"]
 
 		if "new" in event_name:
-			co_logger.LOGGER.Log("Networking (SocketEventHandler) Open socket. {}".format(event_data), 1)
+			# co_logger.LOGGER.Log("Networking (SocketEventHandler) Open socket. {}".format(event_data), 1)
 			if self.ServerSockOpenCallback is not None:
 				self.ServerSockOpenCallback(event_data)
 		elif "data" in event_name:
@@ -320,7 +320,7 @@ class Networking(co_definitions.ILayer):
 					if self.ServerSockDataArrivedCallback is not None:
 						self.ServerSockDataArrivedCallback(sock, sock_info, data)
 		elif "closed" in event_name:
-			co_logger.LOGGER.Log("Networking (SocketEventHandler) Close socket. {}".format(event_data), 1)
+			# co_logger.LOGGER.Log("Networking (SocketEventHandler) Close socket. {}".format(event_data), 1)
 			if self.ServerSockCloseCallback is not None:
 				self.ServerSockCloseCallback(event_data)
 		else:

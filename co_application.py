@@ -119,7 +119,8 @@ class ApplicationLayer(co_definitions.ILayer):
 		self.WSHandlers = {
 			'get_file': 		self.GetFileRequestHandler,
 			'get_resource': 	self.GetResourceRequestHandler,
-			'get_iface_list': 	self.GetIfaceListHandler
+			'get_iface_list': 	self.GetIfaceListHandler,
+			'get_widget': 		self.GetWidgetRequestHandler
 		}
 		self.Ip 	    = None
 		self.Port 	    = None
@@ -131,8 +132,14 @@ class ApplicationLayer(co_definitions.ILayer):
 		self.WebSocketConnectedEventCallbacks 		= []
 		self.WebSocketDisconnectedEventCallbacks 	= []
 
-		self.ErrorCallback 	= None
-		self.FatalError 	= False
+		self.ErrorCallback 				= None
+		self.FatalError 				= False
+		self.CloseProcessRequestEvent 	= None
+	
+	def CloseProcess(self):
+		co_logger.LOGGER.Log("[CloseProcess] Request to close process", 1)
+		if self.CloseProcessRequestEvent is not None:
+			self.CloseProcessRequestEvent()
 	
 	def RegisterConnectedEvent(self, callback):
 		self.WebSocketConnectedEventCallbacks.append(callback)
@@ -202,6 +209,18 @@ class ApplicationLayer(co_definitions.ILayer):
 		objFile = co_file.File()
 
 		path	= os.path.join(".", "static", "js", "application", "resource", packet["payload"]["file_path"])
+		content = objFile.Load(path)
+		
+		return {
+			'file_path': packet["payload"]["file_path"],
+			'content': content.encode("utf-8").hex()
+		}
+	
+	def GetWidgetRequestHandler(self, sock, packet):
+		co_logger.LOGGER.Log("GetWidgetRequestHandler {0}".format(packet), 1)
+		objFile = co_file.File()
+
+		path	= os.path.join(".", "static", "js", "core", "src", "widgets", packet["payload"]["file_path"])
 		content = objFile.Load(path)
 		
 		return {
