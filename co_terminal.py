@@ -22,8 +22,60 @@ class TerminalLayer(co_definitions.ILayer):
 			"web":			self.WebHandler,
 			"exit":			self.ExitHandler,
 			"whoami":		self.WhoAmIHandler,
-			"iface":		self.IFaceHandler
+			"iface":		self.IFaceHandler,
+			"connlist":		self.ConnectionListHandler
 		}
+
+	def ConnectionListHandler(self, data):
+		if self.Application is not None:
+			print("Local Opened Sockets:\n=====================")
+			for idx, conn in enumerate(self.Application.Network.GetConnectionList()):
+				print("{}. {}".format(idx+1, conn))
+			
+			ws_sessions = self.Application.GetSessions()
+			print("Web Opened Sockets:\n===================")
+			for idx, key in enumerate(ws_sessions):
+				'''
+					{
+						'GATEWAY_INTERFACE': 'CGI/1.1', 
+						'SERVER_SOFTWARE': 'gevent/20.0 Python/3.9', 
+						'SCRIPT_NAME': '', 'wsgi.version': (1, 0), 
+						'wsgi.multithread': False, 
+						'wsgi.multiprocess': False, 
+						'wsgi.run_once': False, 
+						'wsgi.url_scheme': 'http', 
+						'wsgi.errors': <_io.TextIOWrapper name='<stderr>' mode='w' encoding='utf-8'>, 
+						'SERVER_NAME': 'KIVEISHA2.auth.hpicorp.net', 
+						'SERVER_PORT': '1945', 
+						'REQUEST_METHOD': 'GET', 
+						'PATH_INFO': '/', 
+						'QUERY_STRING': '', 
+						'SERVER_PROTOCOL': 'HTTP/1.1', 
+						'REMOTE_ADDR': '10.0.0.3', 
+						'REMOTE_PORT': '61055', 
+						'HTTP_HOST': '10.0.0.2:1945', 
+						'HTTP_CONNECTION': 'Upgrade', 
+						'HTTP_PRAGMA': 'no-cache', 
+						'HTTP_CACHE_CONTROL': 'no-cache', 
+						'HTTP_USER_AGENT': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36', 
+						'HTTP_UPGRADE': 'websocket', 
+						'HTTP_ORIGIN': 'http://10.0.0.2:2001', 
+						'HTTP_SEC_WEBSOCKET_VERSION': '13', 
+						'HTTP_ACCEPT_ENCODING': 'gzip, deflate', 
+						'HTTP_ACCEPT_LANGUAGE': 'en-US,en;q=0.9', 
+						'HTTP_SEC_WEBSOCKET_KEY': '4XuC8uoxun5gWLdJc5ghGQ==', 
+						'HTTP_SEC_WEBSOCKET_EXTENSIONS': 'permessage-deflate; client_max_window_bits', 
+						'wsgi.input': <_io.BufferedReader name=1276>, 
+						'wsgi.input_terminated': False, 
+						'wsgi.websocket_version': '13', 
+						'wsgi.websocket': <geventwebsocket.websocket.WebSocket object at 0x000001EA3E0A8D60>}
+				'''
+				ws_session = ws_sessions[key]
+				print("{}. {}".format(idx+1, {
+					"REMOTE_ADDR": ws_session.environ.get('REMOTE_ADDR'),
+					"REMOTE_PORT": ws_session.environ.get('REMOTE_PORT'),
+					"HTTP_HOST": ws_session.environ.get('HTTP_HOST')
+				}))
 
 	def IFaceHandler(self, data):
 		network_cards = mks_config.NodeConfig().ListIface()

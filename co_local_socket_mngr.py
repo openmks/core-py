@@ -36,7 +36,8 @@ class SocketHive():
 	# Queue manager for this thread
 	def SocketQueueHandler(self, item):
 		if "new_sock" in item["type"]:
-			hash_key = self.EnhiveSocket(item["data"]["sock"], item["data"]["ip"], item["data"]["port"], None)
+			# print(item["data"]["sock"].getsockname())
+			hash_key = self.EnhiveSocket(item["data"]["sock"], item["data"]["ip"], item["data"]["port"], "IN", None)
 			item["data"]["hash"] = hash_key
 			if self.SocketCreatedCallback is not None:
 				self.SocketCreatedCallback({
@@ -47,6 +48,7 @@ class SocketHive():
 			sock = item["data"]["sock"]
 			if sock not in self.SockMap:
 				return
+			
 			sock_info = self.SockMap[sock]
 			# Update TS for monitoring
 			sock_info["data"]["timestamp"]["last_updated"] = time.time()
@@ -64,6 +66,7 @@ class SocketHive():
 				if mkss_index != -1 and mkse_index != -1:
 					# Found MKS packet
 					data = mks_data[mkss_index+4:mkse_index]
+					
 					# Raise event for listeners
 					if self.SocketDataArrivedCallback is not None:
 						self.SocketDataArrivedCallback({
@@ -97,7 +100,6 @@ class SocketHive():
 			hash_key 	= item["data"]["hash"]
 			data 		= item["data"]["data"]
 			sock_info 	= self.OpenConnections[hash_key]
-
 			try:
 				data_length		= len(data)
 				chunck_size 	= 65536
@@ -121,7 +123,7 @@ class SocketHive():
 		hashes = co_security.Hashes()
 		return hashes.GetHashMd5("{0}_{1}".format(ip,str(port)))
 	
-	def EnhiveSocket(self, sock, ip, port, callback):
+	def EnhiveSocket(self, sock, ip, port, type, callback):
 		hashes = co_security.Hashes()
 		hash_key = hashes.GetHashMd5("{0}_{1}".format(ip,str(port)))
 		if hash_key in self.OpenConnections:
@@ -133,6 +135,7 @@ class SocketHive():
 			"port": 	port,
 			"hash": 	hash_key,
 			"stream": 	bytes(),
+			"type":		type,
 			"timestamp": {
 				"created": time.time(),
 				"last_updated": time.time()
@@ -186,7 +189,7 @@ class SocketHive():
 		self.ServerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.ServerSocket.setblocking(0)
 		self.ServerSocket.bind(('', self.ListenningPort))
-		self.EnhiveSocket(self.ServerSocket, '', self.ListenningPort, None)
+		self.EnhiveSocket(self.ServerSocket, '', self.ListenningPort, "SERVER", None)
 		self.ServerSocket.listen(32)
 		self.SocketQueue.Start()
 
@@ -291,12 +294,19 @@ class Networking(co_definitions.ILayer):
 
 		self.DataArrivedEventQueue.Start()
 	
+	def SetServerSockOpenCallback(self, callback):
+		co_logger.LOGGER.Log("Networking (SetServerSockOpenCallback)", 1)
+		self.ServerSockOpenCallback = callback
+	
 	def SetServerSockDataArrivedCallback(self, callback):
-		co_logger.LOGGER.Log("Networking (SetServerSockDataArrivedCallback) {}".format(""), 1)
+		co_logger.LOGGER.Log("Networking (SetServerSockDataArrivedCallback)", 1)
 		self.ServerSockDataArrivedCallback = callback
 	
+	def SetServerSockClosedCallback(self, callback):
+		co_logger.LOGGER.Log("Networking (SetServerSockClosedCallback)", 1)
+		self.ServerSockCloseCallback = callback
+	
 	def SocketEventHandler(self, event):
-		#co_logger.LOGGER.Log("Networking (SocketEventHandler) {0}".format(event), 1)
 		server_socket 	= self.Hive.ServerSocket
 		event_name 		= event["name"]
 		event_data 		= event["data"]["event_data"]
@@ -310,13 +320,16 @@ class Networking(co_definitions.ILayer):
 			sock 			= sock_info["socket"]
 			data			= event_data["data"]
 			if sock == server_socket:
+				# co_logger.LOGGER.Log("Networking (SocketEventHandler) Server Data - {}".format(event_data), 1)
 				if self.ServerSockDataArrivedCallback is not None:
 					self.ServerSockDataArrivedCallback(sock, sock_info, data)
 			else:
+				# co_logger.LOGGER.Log("Networking (SocketEventHandler) Client Data - {}".format(event_data), 1)
 				client_callback = event_data["sock_info"]["callback"]
 				if client_callback is not None:
 					client_callback(sock, sock_info, data)
 				else:
+					# co_logger.LOGGER.Log("Networking (SocketEventHandler) Server #2 Data - {}".format(event_data), 1)
 					if self.ServerSockDataArrivedCallback is not None:
 						self.ServerSockDataArrivedCallback(sock, sock_info, data)
 		elif "closed" in event_name:
@@ -461,10 +474,10 @@ class Networking(co_definitions.ILayer):
 
 	def Connect(self, ip, port, callback):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.settimeout(5)
+		sock.settimeout(2)
 		try:
 			sock.connect((ip, port))
-			hash_key = self.Hive.EnhiveSocket(sock, ip, port, callback)
+			hash_key = self.Hive.EnhiveSocket(sock, ip, port, "OUT", callback)
 			# co_logger.LOGGER.Log("Networking (Connect) {} {} SUCCESS".format(ip, port), 1)
 			return hash_key
 		except Exception as e:
@@ -494,6 +507,39 @@ class Networking(co_definitions.ILayer):
 			return None
 		
 		return self.Hive.OpenConnections[hash_key]
+	
+	def GetConnectionList(self):
+		'''
+		{
+			"socket": 	sock,
+			"ip": 		ip,
+			"port": 	port,
+			"hash": 	hash_key,
+			"stream": 	bytes(),
+			"type":		type,
+			"timestamp": {
+				"created": time.time(),
+				"last_updated": time.time()
+			}
+		}
+		'''
+		connections = []
+		for key in self.Hive.OpenConnections:
+			connection = self.Hive.OpenConnections[key]
+			conn = {
+				"ip": connection["data"]["ip"],
+				"port": connection["data"]["port"],
+				"hash": connection["data"]["hash"],
+				"type": connection["data"]["type"]
+			}
+			if "config" in connection:
+				conn["mks"] = {
+					"web": connection["config"]["application"]["server"]["web"],
+					"web_socket": connection["config"]["application"]["server"]["web_socket"],
+					"socket": connection["config"]["application"]["server"]["socket"]
+				}
+			connections.append(conn)
+		return connections
 	
 	def HiveStatistics(self):
 		info = {

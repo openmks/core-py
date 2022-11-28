@@ -48,8 +48,8 @@ class EmuADS():
 
 	def GetValuesFromNameListBurst(self, names):
 		symbols = {}
-		for symbol in names:
-			symbols[symbol] = self.Counter
+		for idx, symbol in enumerate(names):
+			symbols[symbol] = (self.Counter % 10) * (idx + 1)
 		# print("R: {} {}".format(self.Counter, (self.CurrTs-self.PrevTs)/1000000.0))
 			
 		return symbols
@@ -78,7 +78,7 @@ class EmuADS():
 				self.CurrTs 	= time.time_ns()
 
 				self.Counter += 1
-				time.sleep(0.001)
+				time.sleep(0.002)
 			except Exception as e:
 				pass
 	

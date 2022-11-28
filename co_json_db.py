@@ -35,8 +35,10 @@ class DB():
 		return False
 	
 	def CreateDatabase(self, name):
-		co_file.File().SaveJSON(name, {})
-		return self.Load(name)
+		self.DataBase = {}
+		if self.Location is None:
+			self.Location = name
+		self.DataBaseLoaded = True
 	
 	def GetTable(self, tbl_name):
 		try:
@@ -46,13 +48,26 @@ class DB():
 			pass
 		return None
 
-	def AppendTable(self, name):
+	def CreateTable(self, name):
 		if name not in self.DataBase:
 			self.DataBase[name] = []
 			return True
 		return False
 	
-	def AppendRowToTable(self, tbl_name, row):
+	def SelectRow(self, tbl_name, where):
+		ret = []
+		if tbl_name in self.DataBase:
+			for item in self.DataBase[tbl_name]:
+				counter = 0
+				for key in where:
+					if key in item:
+						if where[key] == item[key]:
+							counter += 1
+				if counter == len(where):
+					return ret.append(item)
+		return []
+	
+	def InsertRow(self, tbl_name, row):
 		if tbl_name in self.DataBase:
 			# Find last index
 			max_index = 0
@@ -65,18 +80,6 @@ class DB():
 			self.DataBase[tbl_name].append(row)
 			return True
 		return False
-	
-	def GetItemIndex(self, tbl_name, where):
-		if tbl_name in self.DataBase:
-			for item in self.DataBase[tbl_name]:
-				counter = 0
-				for key in where:
-					if key in item:
-						if where[key] == item[key]:
-							counter += 1
-				if counter == len(where):
-					return int(item["index"])
-		return 0
 	
 	def UpdateRow(self, tbl_name, where, param, value):
 		if tbl_name in self.DataBase:
@@ -111,6 +114,18 @@ class DB():
 				del self.DataBase[tbl_name][del_index]
 				return True
 		return False
+	
+	def GetItemIndex(self, tbl_name, where):
+		if tbl_name in self.DataBase:
+			for item in self.DataBase[tbl_name]:
+				counter = 0
+				for key in where:
+					if key in item:
+						if where[key] == item[key]:
+							counter += 1
+				if counter == len(where):
+					return int(item["index"])
+		return 0
 	
 	def UpdateRowByIndex(self, tbl_name, index, param, value):
 		if tbl_name in self.DataBase:

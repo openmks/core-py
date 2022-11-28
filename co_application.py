@@ -120,7 +120,8 @@ class ApplicationLayer(co_definitions.ILayer):
 			'get_file': 		self.GetFileRequestHandler,
 			'get_resource': 	self.GetResourceRequestHandler,
 			'get_iface_list': 	self.GetIfaceListHandler,
-			'get_widget': 		self.GetWidgetRequestHandler
+			'get_widget': 		self.GetWidgetRequestHandler,
+			'get_config': 		self.GetConfigHandler
 		}
 		self.Ip 	    = None
 		self.Port 	    = None
@@ -136,6 +137,15 @@ class ApplicationLayer(co_definitions.ILayer):
 		self.FatalError 				= False
 		self.CloseProcessRequestEvent 	= None
 	
+	def GetConfigHandler(self, sock, packet):
+		co_logger.LOGGER.Log("GetConfigHandler {0}".format(packet), 1)
+
+		return {
+			"config": {
+				"application": self.Config.Application
+			}
+		}
+	
 	def CloseProcess(self):
 		co_logger.LOGGER.Log("[CloseProcess] Request to close process", 1)
 		if self.CloseProcessRequestEvent is not None:
@@ -146,6 +156,9 @@ class ApplicationLayer(co_definitions.ILayer):
 	
 	def RegisterDisconnectedEvent(self, callback):
 		self.WebSocketDisconnectedEventCallbacks.append(callback)
+	
+	def GetSessions(self):
+		return WSManager.ApplicationSockets
 	
 	def SetIp(self, ip):
 		self.Ip = ip
