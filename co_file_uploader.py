@@ -77,6 +77,7 @@ class Manager():
 		# self.Path 							= "packages"
 		self.UploadLocker					= threading.Lock()
 		self.Ctx.WSHandlers["upload_file"] 	= self.UploadFileHandler
+		self.UploadDoneEvent 				= None
 	
 	#def SetUploadPath(self, path):
 	#	self.Path = path
@@ -100,6 +101,9 @@ class Manager():
 						"file": uploader.Name
 					})
 					self.RemoveCurrentUploader()
+					
+					if self.UploadDoneEvent is not None:
+						self.UploadDoneEvent()
 				elif uploader.CheckTimeout() is True:
 					self.Ctx.AsyncEvent("upload_progress", {
 						"status": "timeout",
