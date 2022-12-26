@@ -3,6 +3,7 @@ import time
 import _thread
 
 class EmuADS():
+	__slots__ = ('AMSNetId', 'Symbols', 'IsConnected', 'Counter', 'PrevTs', 'CurrTs')
 	def __init__(self):
 		self.AMSNetId   	= "Simulated"
 		self.Symbols		= [{
@@ -78,7 +79,7 @@ class EmuADS():
 				self.CurrTs 	= time.time_ns()
 
 				self.Counter += 1
-				time.sleep(0.002)
+				time.sleep(0.001)
 			except Exception as e:
 				pass
 	
@@ -86,6 +87,7 @@ class EmuADS():
 		return True
 
 class ADS():
+	__slots__ = ('PLC', 'AMSNetId', 'Symbols', 'IndexGroup', 'IsConnected')
 	def __init__(self):
 		self.PLC        	= None
 		self.AMSNetId   	= None
