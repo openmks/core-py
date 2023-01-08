@@ -98,7 +98,8 @@ class TerminalLayer(co_definitions.ILayer):
 	
 	def WebHandler(self, data):
 		# Generate command
-		cmd = 'start chrome --window-size={},{} -incognito --app="http://{}:{}"'.format(self.Config.Application["autolaunch"]["width"], self.Config.Application["autolaunch"]["height"],str(self.Config.Application["server"]["address"]["ip"]), str(self.Config.Application["server"]["web"]["port"]))
+		# cmd = 'start chrome --window-size={},{} -incognito --app="http://{}:{}"'.format(self.Config.Application["autolaunch"]["width"], self.Config.Application["autolaunch"]["height"],str(self.Config.Application["server"]["address"]["ip"]), str(self.Config.Application["server"]["web"]["port"]))
+		cmd = 'start chrome -incognito http://{}:{}'.format(str(self.Config.Application["server"]["address"]["ip"]), str(self.Config.Application["server"]["web"]["port"]))
 		objFile = co_file.File()
 		objFile.Save("ui.cmd", cmd)
 		subprocess.call(["ui.cmd"])

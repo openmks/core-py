@@ -1,0 +1,7 @@
+{
+	"packager": {
+		"create": {
+			"flags": ["noruntime", "name", "path"]
+		}
+	}
+}
