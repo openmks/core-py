@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import time
+import pathlib
 
 class File ():
 	def __init__(self):
@@ -96,13 +97,22 @@ class File ():
 
 		return True
 	
-	def DeleteFolder(self, dir_pah):
+	def delete_folder(self, pth):
+		for sub in pth.iterdir():
+			if sub.is_dir() :
+				self.delete_folder(sub)
+			else :
+				sub.unlink()
+		pth.rmdir()
+	
+	def DeleteFolder(self, dir_path):
 		try:
-			if os.path.exists(dir_pah):
-				os.rmdir(dir_pah)
+			if os.path.exists(dir_path):
+				# os.rmdir(dir_path)
+				self.delete_folder(pathlib.Path(dir_path))
 			else:
 				return False
-		except:
+		except Exception as e:
 			return False
 
 		return True

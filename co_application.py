@@ -5,6 +5,7 @@ import _thread
 from collections import OrderedDict
 from geventwebsocket import WebSocketServer, WebSocketApplication, Resource
 import traceback
+from flask import send_file, request, Response # TODO - Must be part of a framework
 
 from core import co_webserver
 from core import co_definitions
@@ -313,3 +314,18 @@ class ApplicationLayer(co_definitions.ILayer):
 			'payload': payload
 		}
 		WSManager.EmitEvent(packet)
+
+	def GetJsonFromPostRequest(self):
+		# application/x-www-form-urlencoded
+		fields = [idx for idx in request.form]
+		values = [request.form[idx] for idx in request.form]
+		# application/x-www-form-urlencoded
+
+		# application/json
+		app_json = request.json
+		# application/json
+
+		return app_json, fields, values
+	
+	def CreateResponse(self, payload):
+		return Response(payload, status=200, mimetype='application/json')
