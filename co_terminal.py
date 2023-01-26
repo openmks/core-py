@@ -1,4 +1,5 @@
 import os
+import json
 
 from core import co_definitions
 from core import co_file
@@ -23,9 +24,24 @@ class TerminalLayer(co_definitions.ILayer):
 			"exit":			self.ExitHandler,
 			"whoami":		self.WhoAmIHandler,
 			"iface":		self.IFaceHandler,
-			"connlist":		self.ConnectionListHandler
+			"connlist":		self.ConnectionListHandler,
+			"loadcfg":		self.LoadConfigHandler,
+			"printcfg": 	self.PrintConfigHandler
 		}
 
+	def PrintConfigHandler(self, data):
+		if self.Config is not None:
+			print("Application:\n{}".format(json.dumps(self.Config.Application, indent=2)))
+			print("Terminal:\n{}".format(json.dumps(self.Config.Terminal, indent=2)))
+			print("Logger:\n{}".format(json.dumps(self.Config.Logger, indent=2)))
+			print("Network:\n{}".format(json.dumps(self.Config.Network, indent=2)))
+			print("User:\n{}".format(json.dumps(self.Config.User, indent=2)))
+	
+	def LoadConfigHandler(self, data):
+		self.Config.Load()
+		if self.Application is not None:
+			self.Application.Config.Load()
+	
 	def ConnectionListHandler(self, data):
 		if self.Application is not None:
 			print("Local Opened Sockets:\n=====================")

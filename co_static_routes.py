@@ -9,8 +9,8 @@ from core import co_security
 from core import co_logger
 
 class StaticRoutes():
-	def __init__(self, network):
-		self.Config				= mks_config.NodeConfig()
+	def __init__(self, network, config):
+		self.Config				= config
 		self.Users 				= {}
 		self.Network 			= network
 		self.Running 			= True
@@ -73,9 +73,8 @@ class StaticRoutes():
 	def Worker(self):
 		co_logger.LOGGER.Log("(StaticRoutes)# Start worker", 1)
 
-		status = self.Config.Load()
-		if status is False:
-			False
+		if self.Config is None:
+			return False
 		
 		self.Routes = self.Config.Application["server"]["static"]["users"]
 		self.Running = True

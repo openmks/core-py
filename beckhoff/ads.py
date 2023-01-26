@@ -3,7 +3,7 @@ import time
 import _thread
 
 class EmuADS():
-	__slots__ = ('AMSNetId', 'Symbols', 'IsConnected', 'Counter', 'PrevTs', 'CurrTs')
+	__slots__ = ('AMSNetId', 'Symbols', 'IsConnected', 'Counter', 'PrevTs', 'CurrTs', 'HaltState')
 	def __init__(self):
 		self.AMSNetId   	= "Simulated"
 		self.Symbols		= [{
@@ -18,6 +18,7 @@ class EmuADS():
 		self.Counter 		= 0
 		self.PrevTs 		= time.time_ns()
 		self.CurrTs 		= time.time_ns()
+		self.HaltState 		= False
 	
 	def Connect(self, ams_net_id):
 		self.IsConnected = True
@@ -46,6 +47,9 @@ class EmuADS():
 	
 	def ReadStructuredSymbol(self, name):
 		pass
+	
+	def Halt(self, state):
+		self.HaltState = state
 
 	def GetValuesFromNameListBurst(self, names):
 		symbols = {}
@@ -78,7 +82,8 @@ class EmuADS():
 				self.PrevTs 	= self.CurrTs
 				self.CurrTs 	= time.time_ns()
 
-				self.Counter += 1
+				if self.HaltState is False:
+					self.Counter += 1
 				time.sleep(0.001)
 			except Exception as e:
 				pass
@@ -153,6 +158,9 @@ class ADS():
 				"access": "R&W"
 			}
 		}
+	
+	def Halt(self, state):
+		pass
 	
 	def AddRoute(self, ams_net_id, my_ip, target_ip, target_username, target_password, rout_name):
 		pyads.add_route_to_plc(
