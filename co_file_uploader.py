@@ -92,14 +92,24 @@ class Manager():
 			if uploader is not None:
 				if uploader.UploadDone is True:
 					data, length = uploader.GetFileRaw()
-					# TODO: Don't save if file exist
-					co_file.File().SaveArray(os.path.join(uploader.Path, uploader.Name), data)
-					self.Ctx.AsyncEvent("upload_progress", {
-						"status": "done",
-						"precentage": "100%",
-						"message": "Upload package done...",
-						"file": uploader.Name
-					})
+					filedesc = co_file.File()
+					status = filedesc.CreateFloder(uploader.Path)
+					if status is True:
+						filedesc.SaveArray(os.path.join(uploader.Path, uploader.Name), data)
+						self.Ctx.AsyncEvent("upload_progress", {
+							"status": "done",
+							"precentage": "100%",
+							"message": "Upload package done...",
+							"file": uploader.Name
+						})
+					else:
+						self.Ctx.AsyncEvent("upload_progress", {
+							"status": "error",
+							"precentage": "100%",
+							"message": "Could not save the file",
+							"file": uploader.Name
+						})
+					
 					self.RemoveCurrentUploader()
 					
 					if self.UploadDoneEvent is not None:

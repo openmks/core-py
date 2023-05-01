@@ -206,12 +206,13 @@ class ADS():
 		self.IsConnected = False
 		self.AMSNetId	 = None
 	
-	def ReadSymbol(self, name):
+	def ReadSymbol(self, symbol):
 		value = None
 		try:
-			value = self.PLC.read_by_name(name)
-		except:
-			pass
+			# value = self.PLC.read_by_name(symbol)
+			value = self.PLC.read_list_by_name([symbol])
+		except Exception as e:
+			print("<ReadSymbol> Exception {} {}".format(symbol, str(e)))
 
 		return value
 	

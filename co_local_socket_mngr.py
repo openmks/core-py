@@ -4,6 +4,7 @@ import time
 import socket, select
 import traceback
 
+import zlib as zl
 from core.mks import mks_config
 from core import co_definitions
 from core import co_security
@@ -12,6 +13,9 @@ from core import co_logger
 
 class SocketHive():
 	def __init__(self):
+		__slots__ = (	'Config', 'LocSocketQueueker', 'ServerSocket', 'RecievingSockets',
+		 				'SendingSockets', 'OpenConnections', 'SockMap', 'ServerRunning',
+		 				'ListenningPort', 'SocketDataArrivedCallback', 'SocketClosedCallback', 'SocketCreatedCallback', 'CHUNK_SIZE')
 		self.Config 					= mks_config.NodeConfig()
 		self.SocketQueue 				= co_queue.Manager(self.SocketQueueHandler)
 		self.ServerSocket 				= None
@@ -25,6 +29,8 @@ class SocketHive():
 		self.SocketDataArrivedCallback 	= None
 		self.SocketClosedCallback 		= None
 		self.SocketCreatedCallback 		= None
+
+		self.CHUNK_SIZE = 65536
 	
 	def Run(self, port):
 		self.ListenningPort = port
@@ -60,13 +66,26 @@ class SocketHive():
 
 			working = True
 			while working is True:
-				mkss_index 		= mks_data.find("MKSS".encode())
-				mkse_index 		= mks_data.find("MKSE".encode())
+				mkss_index = mks_data.find("MKSS".encode())
+				mkse_index = mks_data.find("MKSE".encode())
 
+				#co_logger.LOGGER.Log("R: {}".format(mks_data_len), 1)
 				if mkss_index != -1 and mkse_index != -1:
 					# Found MKS packet
 					data = mks_data[mkss_index+4:mkse_index]
+
+					#if len(data) > self.CHUNK_SIZE:
+					try:
+						# co_logger.LOGGER.Log("R: {}".format(len(data)), 1)
+						decoded_data_str = data.decode()
+						# create bytes object from a string
+						decoded_data_byt = bytes.fromhex(decoded_data_str)
+						data = zl.decompress(decoded_data_byt)
+						# co_logger.LOGGER.Log("SocketQueueHandler (RX) {}".format(len(data)), 1)
+					except Exception as e:
+						co_logger.LOGGER.Log("SocketQueueHandler (ZL) Exception: {} \n=======\nTrace: {}=======".format(str(e), traceback.format_exc()), 1)
 					
+					#co_logger.LOGGER.Log("R (D): {}".format(mks_data_len), 1)
 					# Raise event for listeners
 					if self.SocketDataArrivedCallback is not None:
 						self.SocketDataArrivedCallback({
@@ -79,10 +98,11 @@ class SocketHive():
 					
 					mks_data = mks_data[mkse_index+4:mks_data_len]
 					sock_info["data"]["stream"] = mks_data
+					break
 				else:
 					# Did not found MKS packet
-					# co_logger.LOGGER.Log("Networking (SocketEventHandler) NO MAGIC NUMBER IN PACKET.", 1)
-					return
+					break
+			#co_logger.LOGGER.Log("R: (E) {}".format(mks_data_len), 1)
 		elif "close_sock" in item["type"]:
 			sock = item["data"]
 			if sock not in self.SockMap:
@@ -100,15 +120,24 @@ class SocketHive():
 			hash_key 	= item["data"]["hash"]
 			data 		= item["data"]["data"]
 			sock_info 	= self.OpenConnections[hash_key]
+			index_db = 0
+			num_of_chuncks = 0
 			try:
+				#if len(data) > self.CHUNK_SIZE:
+				if type(data) is bytes:
+					data = zl.compress(data, zl.Z_BEST_COMPRESSION).hex()
+				else:
+					data = zl.compress(data.encode(), zl.Z_BEST_COMPRESSION).hex()
+					
 				data_length		= len(data)
-				chunck_size 	= 65536
+				chunck_size 	= self.CHUNK_SIZE
 				num_of_chuncks 	= int(data_length / chunck_size)
 
 				if num_of_chuncks == 0:
 					sock_info["data"]["socket"].send(("MKSS"+data+"MKSE").encode())
 				else:
 					for idx in range(num_of_chuncks):
+						index_db = idx
 						if idx == 0:
 							sock_info["data"]["socket"].send(("MKSS"+data[idx * chunck_size:(idx + 1) * chunck_size]).encode())
 						else:
@@ -117,7 +146,7 @@ class SocketHive():
 					left_over = data_length % chunck_size
 					sock_info["data"]["socket"].send((data[data_length-left_over:data_length]+"MKSE").encode())
 			except Exception as e:
-				co_logger.LOGGER.Log("SocketQueueHandler [SEND] ({}) Exception: {}".format(len(data), str(e)), 1)
+				co_logger.LOGGER.Log("SocketQueueHandler [SEND] ({}/{}) ({}) Exception: {}".format(index_db, num_of_chuncks, len(data), str(e)), 1)
 	
 	def GetHash(self, ip, port):
 		hashes = co_security.Hashes()
@@ -200,7 +229,7 @@ class SocketHive():
 				for sock in read:
 					if sock is self.ServerSocket:
 						conn, addr = sock.accept()
-						# conn.setblocking(0)
+						conn.setblocking(0)
 						# Append to new socket queue
 						self.SocketQueue.QueueItem({
 							"type": "new_sock",
@@ -213,15 +242,17 @@ class SocketHive():
 					else:
 						try:
 							if sock is not None:
-								data = sock.recv(2048)
-								dataLen = len(data)
-								while dataLen == 2048:
-									chunk = sock.recv(2048)
-									data += chunk
-									dataLen = len(chunk)
+								data = sock.recv(self.CHUNK_SIZE)
+								#dataLen = len(data)
+								#while dataLen == 65536:
+								#	chunk = sock.recv(65536)
+								#	data += chunk
+								#	dataLen = len(chunk)
+								#	co_logger.LOGGER.Log("Chunk {}".format(len(chunk)), 1)
 								if data:
 									# co_logger.LOGGER.Log("Networking ({}) Data -> {}".format(len(data), data), 1)
 									# Append to new data queue
+									# co_logger.LOGGER.Log("Data {}".format(len(data)), 1)
 									self.SocketQueue.QueueItem({
 										"type": "new_data",
 										"data": {

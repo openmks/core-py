@@ -8,13 +8,15 @@ import threading
 import serial
 import serial.tools.list_ports
 
+from core import co_logger
+
 class UART:
 	def __init__(self, serialPort = '/dev/ttyUSB0', serialBaud = 38400):
 		self.SerialAdapter 				= None
 		self.Port 						= serialPort
 		self.Baud 						= serialBaud
 		self.DataLock 					= threading.Lock()
-		self.IsRecieverRunning 			= True
+		self.IsRecieverRunning 			= False
 		self.DataBytes 					= None
 		self.DataBytesLength 			= 0
 		self.BytesPerFrame 				= 1
@@ -23,8 +25,11 @@ class UART:
 		self.DataArrivedCallback		= None
 	
 	def Connect(self):
-		print("[UART] Connect port {port} with boudrate {boud}...".format(port=self.Port, boud=str(self.Baud)))
+		co_logger.LOGGER.Log("[UART] Connect port {port} with boudrate {boud}...".format(port=self.Port, boud=str(self.Baud)), 1)
 		try:
+			if self.IsRecieverRunning is True:
+				return False
+			
 			self.SerialAdapter = serial.Serial(write_timeout = 1)
 			self.SerialAdapter.port		= self.Port
 			self.SerialAdapter.baudrate	= self.Baud
@@ -37,22 +42,27 @@ class UART:
 
 			if self.SerialAdapter is not None:
 				_thread.start_new_thread(self.RecieveDataThread, ())
-				print ("[UART] Connected to port {port} with boudrate {boud}.".format(port=self.Port, boud=str(self.Baud)))
+				co_logger.LOGGER.Log("[UART] Connected to port {port} with boudrate {boud}.".format(port=self.Port, boud=str(self.Baud)), 1)
 				time.sleep(0.5)
 			return True
 		except:
-			print("[UART] <EXCEPTION> Failed to connect with " + str(self.Port) + ' at ' + str(self.Baud) + ' baudrate.')
+			co_logger.LOGGER.Log("[UART] <EXCEPTION> Failed to connect with {} at {} baudrate.".format(str(self.Port), str(self.Baud)), 1)
+			# print("[UART] <EXCEPTION> Failed to connect with " + str(self.Port) + ' at ' + str(self.Baud) + ' baudrate.')
 			return False
 	
 	def Disconnect(self):
 		self.IsRecieverRunning = False
-		self.SerialAdapter.close()
-		print ("[UART] Disconnect from port {port}.".format(port=self.Port))
+		if self.SerialAdapter is not None:
+			self.SerialAdapter.close()
+		
+		co_logger.LOGGER.Log("[UART] Disconnect from port {port}.".format(port=self.Port), 1)
+		return True
 	
 	def SetBytesPerFrame(self, byteperframe):
 		self.BytesPerFrame = byteperframe
 
 	def RecieveDataThread(self):
+		self.IsRecieverRunning = True
 		while self.IsRecieverRunning is True:
 			try:
 				self.DataBytes = self.SerialAdapter.read(self.BytesPerFrame)
@@ -69,3 +79,9 @@ class UART:
 	def Write(self, data):
 		# print ("[OUT] " + ":".join("{:02x}".format(ord(c)) for c in str(data)))
 		self.SerialAdapter.write(data.encode())
+	
+	def WriteBytes(self, data):
+		self.SerialAdapter.write(data)
+	
+	def GetComPorts(self):
+		return [port for port in serial.tools.list_ports.comports() if port[2] != 'n/a']

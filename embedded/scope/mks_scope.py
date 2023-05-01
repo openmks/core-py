@@ -139,7 +139,9 @@ class ScopeData():
 		
 	def CalculateDataSizeForUnpack(self):
 		sum = 0
+		items_count = 0
 		data_types = {
+			"s": 0,
 			"d": 8,
 			"f": 4,
 			"q": 8,
@@ -153,9 +155,17 @@ class ScopeData():
 		}
 
 		for item in self.Structure:
-			sum += data_types[item["type"]]
+			if item["type"] not in data_types:
+				type_d = item["type"][-1:]
+				count = item["type"][:-1]
+				if type_d in data_types:
+					sum += int(count)
+					items_count += 1
+			else:
+				sum += data_types[item["type"]]
+				items_count += 1
 
-		return sum
+		return sum, items_count
 	
 	def GenrateDataTypeForUnpack(self):
 		structure = "<"
@@ -166,28 +176,40 @@ class ScopeData():
 
 	def Parse(self, channel_id, buffer):
 		if channel_id == self.ChannelId:
-			expected_size = self.CalculateDataSizeForUnpack()
+			expected_size, items_count = self.CalculateDataSizeForUnpack()
 			if len(buffer) == expected_size:
 				structure = self.GenrateDataTypeForUnpack()
 				unpacked_data = struct.unpack(structure, buffer)
-
 				data = []
-				if len(unpacked_data) == len(self.Structure):
+				if len(unpacked_data) == items_count:
 					for idx, value in enumerate(unpacked_data):
 						error = ""
-						if (math.isinf(value)):
-							value = 0.0
-							error += "inf,"
-						if (math.isnan(value)):
-							value = 0.0
-							error += "nan,"
-						data.append({
-							"name": self.Structure[idx]["name"],
-							"value": value,
-							"error": error
-						})
+						try:
+							if type(value) is bytes:
+								stream = struct.unpack("%dH" % (len(value) / 2), value)
+								data.append({
+									"name": self.Structure[idx]["name"],
+									"value": stream,
+									"error": error
+								})
+							else:
+								if (math.isinf(value)):
+									value = 0.0
+									error += "inf,"
+								if (math.isnan(value)):
+									value = 0.0
+									error += "nan,"
+								
+								data.append({
+									"name": self.Structure[idx]["name"],
+									"value": value,
+									"error": error
+								})
+						except Exception as e:
+							print(str(e))
+							#print("Parse: type of value {} not supported".format(type(value)))						
 				else:
-					print(len(unpacked_data), len(self.Structure))
+					print("Parse: Size of unpacked ({}) different from structured ({})".format(len(unpacked_data), items_count))
 				
 				return data
 			else:

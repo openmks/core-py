@@ -1,6 +1,7 @@
 import json
 import traceback
 import time
+import orjson
 
 from core import co_logger
 from core import co_async_block
@@ -34,7 +35,7 @@ class MKSSocket():
 		self.ServerSockCloseCallback = callback
 	
 	def MessageQueueHandler(self, msg):
-		co_logger.LOGGER.Log("MessageQueueHandler {}".format(msg), 1)
+		# co_logger.LOGGER.Log("MessageQueueHandler {}".format(msg), 1)
 		msg_type = msg["type"]
 		msg_data = msg["data"]
 		if "enhive" in msg_type:
@@ -93,6 +94,29 @@ class MKSSocket():
 			self.Locker.release()
 			if self.ServerSockOpenCallback is not None:
 				self.ServerSockOpenCallback(msg_data)
+		elif "async_send" in msg_type:
+			event_name = msg["event_name"]
+			request = {
+				"header": {
+					"command": "event",
+					"timestamp": time.time(),
+					"identifier": 0
+				},
+				"payload": {
+					"event": event_name,
+					"data": msg_data
+				}
+			}
+			
+			try:
+				for sock in self.Network.Hive.SockMap:
+					sock_info = self.Network.Hive.SockMap[sock]
+					if sock != self.Network.Hive.ServerSocket:
+						sock_info = self.Network.GetSocketInfoBySock(sock)
+						raw_request = orjson.dumps(request)
+						self.Network.Send(sock_info["ip"], sock_info["port"], raw_request)
+			except:
+				pass
 		else:
 			pass
 
@@ -112,7 +136,6 @@ class MKSSocket():
 				}
 			}
 			'''
-			# co_logger.LOGGER.Log("MKSDataArrivedHandler {} {} {}".format(sock, sock_info, packet), 1)
 			command = packet["header"]["command"]
 			if self.WSHandlers is not None:
 				if command in self.WSHandlers.keys():
@@ -149,6 +172,11 @@ class MKSSocket():
 		self.Network.SetServerSockClosedCallback(self.MKSDehiveSocketHandler)
 	
 	def AsyncSend(self, event_name, data):
+		#self.SocketQueue.QueueItem({
+		#	"type": "async_send",
+		#	"event_name": event_name,
+		#	"data": data
+		#})
 		request = {
 			"header": {
 				"command": "event",
@@ -167,8 +195,10 @@ class MKSSocket():
 				sock_info = self.Network.Hive.SockMap[sock]
 				if sock != self.Network.Hive.ServerSocket:
 					sock_info = self.Network.GetSocketInfoBySock(sock)
-					self.Network.Send(sock_info["ip"], sock_info["port"], json.dumps(request))
+					raw_request = orjson.dumps(request)
+					self.Network.Send(sock_info["ip"], sock_info["port"], raw_request)
 			self.Locker.release()
-		except:
+		except Exception as e:
+			co_logger.LOGGER.Log("AsyncSend [SEND] ({}) Exception: {}".format(len(data), str(e)), 1)
 			if self.Locker.locked() is True:
 				self.Locker.release()

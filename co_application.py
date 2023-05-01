@@ -130,6 +130,7 @@ class ApplicationLayer(co_definitions.ILayer):
 		# self.HW 		= None
 		self.Config 	= mks_config.NodeConfig()
 		self.Web		= None
+		self.RootPath 	= os.getcwd()
 
 		self.WebSocketConnectedEventCallbacks 		= []
 		self.WebSocketDisconnectedEventCallbacks 	= []
