@@ -78,6 +78,7 @@ class Manager():
 		self.UploadLocker					= threading.Lock()
 		self.Ctx.WSHandlers["upload_file"] 	= self.UploadFileHandler
 		self.UploadDoneEvent 				= None
+		self.UploadStartEvent 				= None
 	
 	#def SetUploadPath(self, path):
 	#	self.Path = path
@@ -183,6 +184,9 @@ class Manager():
 		self.Uploaders[fileName] = upload
 		self.UploaderKeys.append(fileName)
 		self.Locker.release()
+
+		if self.UploadStartEvent is not None:
+			self.UploadStartEvent()
 	
 	def UploadFileHandler(self, sock, packet):
 		co_logger.LOGGER.Log("UploadFileHandler {}".format(packet["payload"]["upload"]["chunk"]), 1)

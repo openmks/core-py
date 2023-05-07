@@ -122,7 +122,8 @@ class ApplicationLayer(co_definitions.ILayer):
 			'get_resource': 	self.GetResourceRequestHandler,
 			'get_iface_list': 	self.GetIfaceListHandler,
 			'get_widget': 		self.GetWidgetRequestHandler,
-			'get_config': 		self.GetConfigHandler
+			'get_config': 		self.GetConfigHandler,
+			'get_app_info': 	self.GetAppInfoHandler,
 		}
 		self.Ip 	    = None
 		self.Port 	    = None
@@ -139,6 +140,17 @@ class ApplicationLayer(co_definitions.ILayer):
 		self.FatalError 				= False
 		self.CloseProcessRequestEvent 	= None
 	
+	def GetAppInfoHandler(self, sock, packet):
+		co_logger.LOGGER.Log("GetAppInfoHandler {0}".format(packet), 1)
+
+		return {
+			"version": {
+				"application": self.Config.Root["version"],
+				"mks": self.Config.Root["mks_ver"]
+			},
+			"name": self.Config.Application["name"]
+		}
+
 	def GetConfigHandler(self, sock, packet):
 		co_logger.LOGGER.Log("GetConfigHandler {0}".format(packet), 1)
 

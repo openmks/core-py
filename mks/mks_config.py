@@ -8,6 +8,7 @@ from core import co_common
 class NodeConfig():
 	def __init__(self):
 		self.MKSEnvPath 	= None # os.path.join(os.environ['HOME'],"mks")
+		self.Root 			= None
 		self.Application 	= None
 		self.Terminal 		= None
 		self.Logger 		= None
@@ -33,17 +34,17 @@ class NodeConfig():
 			return False
 		
 		try:
-			config = json.loads(strJson)
-			if "application" in config:
-				self.Application = config["application"]
-			if "terminal" in config:
-				self.Terminal = config["terminal"]
-			if "logger" in config:
-				self.Logger = config["logger"]
-			if "network" in config:
-				self.Network = config["network"]
-			if "user" in config:
-				self.User = config["user"]
+			self.Root = json.loads(strJson)
+			if "application" in self.Root:
+				self.Application = self.Root["application"]
+			if "terminal" in self.Root:
+				self.Terminal = self.Root["terminal"]
+			if "logger" in self.Root:
+				self.Logger = self.Root["logger"]
+			if "network" in self.Root:
+				self.Network = self.Root["network"]
+			if "user" in self.Root:
+				self.User = self.Root["user"]
 
 			self.LocalIPAddress = self.GetIPAddress()
 			if self.LocalIPAddress is not None:

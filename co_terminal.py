@@ -26,9 +26,13 @@ class TerminalLayer(co_definitions.ILayer):
 			"iface":		self.IFaceHandler,
 			"connlist":		self.ConnectionListHandler,
 			"loadcfg":		self.LoadConfigHandler,
-			"printcfg": 	self.PrintConfigHandler
+			"printcfg": 	self.PrintConfigHandler,
+			"version": 		self.VersionHandler
 		}
 
+	def VersionHandler(self, data):
+		print("Application: {}\nMKS Framwork: {}".format(self.Config.Root["version"], self.Config.Root["mks_ver"]))
+	
 	def PrintConfigHandler(self, data):
 		if self.Config is not None:
 			print("Application:\n{}".format(json.dumps(self.Config.Application, indent=2)))
@@ -126,7 +130,7 @@ class TerminalLayer(co_definitions.ILayer):
 		import webview
 		path = "http://{0}:{1}".format(str(self.Config.Application["server"]["address"]["ip"]), str(self.Config.Application["server"]["web"]["port"]))
 		co_logger.LOGGER.Log("({classname})# (AppHandler) Path = {}".format(path, classname=self.ClassName), 1)
-		window = webview.create_window(self.ApplicationName, path, width=1600, height=800) # fullscreen=True
+		window = webview.create_window(self.Config.Application["name"], path, width=self.Config.Application["autolaunch"]["width"], height=self.Config.Application["autolaunch"]["height"]) # fullscreen=True
 		co_logger.LOGGER.Log("({classname})# (AppHandler) Window = {}".format(window, classname=self.ClassName), 1)
 		webview.start()
 	
